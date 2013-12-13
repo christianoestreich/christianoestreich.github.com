@@ -1,0 +1,1093 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="Based on a request from a user to add user defined logging and fault
+interceptors, I have enhanced the Grails cxf-client plugin. I have
+included &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/blog/page/3/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2011/12/grails-cxf-client-custom-interceptors/">Grails Cxf Client 1.2.3 Released</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-12-13T13:58:55+00:00" pubdate data-updated="true">Dec 13<span>th</span>, 2011</time>
+        
+         | <a href="/2011/12/grails-cxf-client-custom-interceptors/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Based on a request from a user to add user defined logging and fault
+interceptors, I have enhanced the <a href="http://www.grails.org/plugin/cxf-client" title="Grails Cxf Client Plugin">Grails cxf-client plugin</a>. I have
+included these features in the new release version 1.2.3.</p>
+
+<p>In the previous version (1.2.2) of the plugin I added the ability to override
+the security interceptor. This was done to allow users to diverge from using
+the standard WSS4J interceptor that I bundled with the plugin. I accomplished
+this by adding an single out interceptor to the cxf client proxy.</p>
+
+<p>In the latest version I have taken the interceptor injection one step further
+and allowed users to configure any number of in, out or fault out interceptors
+they want to add to the interceptor chain.  In addition I have provided a flag
+to turn on or off the default logging in and out interceptors that I am auto
+injecting for the users.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/2011/12/grails-cxf-client-custom-interceptors/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2011/11/domain-constraints-grails-spock/">Testing Domain Constraints Using Grails 2.0 & Spock</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-11-23T13:31:58+00:00" pubdate data-updated="true">Nov 23<span>rd</span>, 2011</time>
+        
+         | <a href="/2011/11/domain-constraints-grails-spock/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Please refer to the updated post at <a href="http://www.christianoestreich.com/2012/11/domain-constraints-grails-spock-updated/">http://www.christianoestreich.com/2012/11/domain-constraints-grails-spock-updated/</a></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2011/11/injectable-grails-plugins.markdown/">Allowing Users to Inject Custom Beans Into Your Grails Plugin</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-11-10T18:44:23+00:00" pubdate data-updated="true">Nov 10<span>th</span>, 2011</time>
+        
+         | <a href="/2011/11/injectable-grails-plugins.markdown/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content">Recently with my [cxf-client][1] plugin I wanted to give users a way to inject
+custom beans into the auto-wired client services. At first I was having a
+little trouble figuring out how to get each configured service to have a
+uniquely injected security interceptor. Burt Beckwith does something similar
+with the [spring-security-core][2] plugin. I borrowed heavily on his method
+for using [filters][3].
+
+The key to getting this working was knowing that the service client factory I
+use is a singleton as are each unique instance of the service that is
+configured. Given the way I have the apache cxf code wrapped, any clients
+created hand off their actual creation of the service proxy to the service
+client factory. The security interceptor that is injected to the client has
+to be a unique bean as it will be wired up as a singleton as well and be
+handed off to the factory during creation. What this ultimately means is that
+I can&#8217;t just have one global property that can be overridden by a common bean
+name as this would be shared across clients and not give each client the
+flexibility to define it&#8217;s own unique security interceptor property values
+such as username and password
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/2011/11/injectable-grails-plugins.markdown/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2011/11/injectable-grails-plugins/">Allowing Users to Inject Custom Beans Into Your Grails Plugin</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-11-10T18:44:23+00:00" pubdate data-updated="true">Nov 10<span>th</span>, 2011</time>
+        
+         | <a href="/2011/11/injectable-grails-plugins/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Recently with my <a href="http://grails.org/plugin/cxf-client">cxf-client</a> plugin I wanted to give users a way to inject
+custom beans into the auto-wired client services. At first I was having a
+little trouble figuring out how to get each configured service to have a
+uniquely injected security interceptor. Burt Beckwith does something similar
+with the <a href="https://github.com/grails-plugins/grails-spring-security-core/blob/master/SpringSecurityCoreGrailsPlugin.groovy">spring-security-core</a> plugin. I borrowed heavily on his method
+for using <a href="http://grails-plugins.github.com/grails-spring-security-core/docs/manual/guide/16%20Filters.html">filters</a>.</p>
+
+<p>The key to getting this working was knowing that the service client factory I
+use is a singleton as are each unique instance of the service that is
+configured. Given the way I have the apache cxf code wrapped, any clients
+created hand off their actual creation of the service proxy to the service
+client factory. The security interceptor that is injected to the client has
+to be a unique bean as it will be wired up as a singleton as well and be
+handed off to the factory during creation. What this ultimately means is that
+I can&rsquo;t just have one global property that can be overridden by a common bean
+name as this would be shared across clients and not give each client the
+flexibility to define it&rsquo;s own unique security interceptor property values
+such as username and password</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/2011/11/injectable-grails-plugins/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2011/11/redis-hashsets-performance/">Redis Hashsets - Performance Analysis & Numerical Key Compression</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-11-03T16:23:06+00:00" pubdate data-updated="true">Nov 3<span>rd</span>, 2011</time>
+        
+         | <a href="/2011/11/redis-hashsets-performance/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Recently I read a pretty interesting <a href="http://instagram-engineering.tumblr.com/post/12202313862/storing-hundreds-of-millions-of-simple-key-value-pairs" title="Redis Instagram">blog post</a> by Mike Krieger, co-founder of Instagram.  The summary of the post was they were faced with an interesting challenge in storing 300 million key value pairs for consumer to photo resolution.  They even went as far as to write an interesting test in
+python and posted it on <a href="https://gist.github.com/1329319">github gist</a>.</p>
+
+<p>I wanted to see if I could improve a bit on his memory allocation in the redis
+hash so I set out to write an algorithm that might help further reduce the
+overhead.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/2011/11/redis-hashsets-performance/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2011/10/grails-cxf-client-updated.markdown/">Grails CXF Client - Updated</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-10-28T10:52:02+00:00" pubdate data-updated="true">Oct 28<span>th</span>, 2011</time>
+        
+         | <a href="/2011/10/grails-cxf-client-updated.markdown/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content">I updated a few features to the cxf client plugin.  I added the following new
+config parameters to help drive the wsdl2java script.
+
+namespace = [package name to use for generated classes] //optional - uses
+packages from wsdl if not provided client = [true or false] //optional - used
+to tell wsdl2java to output sample clients, usually not needed - defaults to
+false binding = [Specifies JAXWS or JAXB binding files or XMLBeans context
+files] //optional outputDir = [location to output generated files] //optional
+- defaults to src/java
+
+You can get more details at [https://github.com/Grails-Plugin-Consortium/cxf-client][1]
+
+   [1]: https://github.com/Grails-Plugin-Consortium/cxf-client (grails cxf client)
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2011/10/grails-cxf-client-updated/">Grails CXF Client - Updated</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-10-28T10:52:02+00:00" pubdate data-updated="true">Oct 28<span>th</span>, 2011</time>
+        
+         | <a href="/2011/10/grails-cxf-client-updated/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I updated a few features to the cxf client plugin.  I added the following new
+config parameters to help drive the wsdl2java script.</p>
+
+<p>namespace = [package name to use for generated classes] //optional &ndash; uses
+packages from wsdl if not provided client = [true or false] //optional &ndash; used
+to tell wsdl2java to output sample clients, usually not needed &ndash; defaults to
+false binding = [Specifies JAXWS or JAXB binding files or XMLBeans context
+files] //optional outputDir = [location to output generated files] //optional
+&ndash; defaults to src/java</p>
+
+<p>You can get more details at <a href="https://github.com/Grails-Plugin-Consortium/grails-cxf-client" title="grails cxf client">https://github.com/Grails-Plugin-Consortium/grails-cxf-client</a></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2011/10/grails-cxf-client-plugin.markdown/">Grails Cxf Client Plugin Released</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-10-12T12:56:54+00:00" pubdate data-updated="true">Oct 12<span>th</span>, 2011</time>
+        
+         | <a href="/2011/10/grails-cxf-client-plugin.markdown/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content">I am happy to announce that I have released the version 1.0 of the cxf client
+plugin.  The plugin can be found here:  [http://grails.org/plugin/cxf-
+client][1].
+
+There are a few different plugins for consuming SOAP web services with grails,
+but none currently deal with the issue of caching port references. The ws-
+client plugin works, but its limitations are in how it creates and consumes
+the wsdl. It relies on real time creation of proxy classes and services which
+can be very processor and memory (time) consuming with a large or complex
+service contract. We need a way to speed up service invocation so this plugin
+was created to facilitate that need when consuming SOAP services using cxf.
+
+The Cxf Client plugin will allow you to use existing (or new) apache cxf
+wsdl2java generated content and cache the port reference to speed up your soap
+service end point invocations through an easy configuration driven mechanism.
+
+A big thanks to Brett Borchardt and Stefan Armbruster for helping out with the
+plugin coding/review and the wsdl2java script.
+
+The source can be found here:  [https://github.com/Grails-Plugin-Consortium/cxf-client][2]
+
+
+   [1]: http://grails.org/plugin/cxf-client (cxf client plugin)
+
+   [2]: https://github.com/Grails-Plugin-Consortium/cxf-client (cxf client source)
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2011/10/grails-cxf-client-plugin/">Grails Cxf Client Plugin Released</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-10-12T12:56:54+00:00" pubdate data-updated="true">Oct 12<span>th</span>, 2011</time>
+        
+         | <a href="/2011/10/grails-cxf-client-plugin/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I am happy to announce that I have released the version 1.0 of the cxf client
+plugin.  The plugin can be found here:  <a href="http://grails.org/plugin/cxf-client" title="cxf client plugin">http://grails.org/plugin/cxf-
+client</a>.</p>
+
+<p>There are a few different plugins for consuming SOAP web services with grails,
+but none currently deal with the issue of caching port references. The ws-
+client plugin works, but its limitations are in how it creates and consumes
+the wsdl. It relies on real time creation of proxy classes and services which
+can be very processor and memory (time) consuming with a large or complex
+service contract. We need a way to speed up service invocation so this plugin
+was created to facilitate that need when consuming SOAP services using cxf.</p>
+
+<p>The Cxf Client plugin will allow you to use existing (or new) apache cxf
+wsdl2java generated content and cache the port reference to speed up your soap
+service end point invocations through an easy configuration driven mechanism.</p>
+
+<p>A big thanks to Brett Borchardt and Stefan Armbruster for helping out with the
+plugin coding/review and the wsdl2java script.</p>
+
+<p>The source can be found here:  <a href="https://github.com/Grails-Plugin-Consortium/grails-cxf-client" title="cxf client source">https://github.com/Grails-Plugin-Consortium/grails-cxf-client</a></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2011/06/redis-vs-h2/">Grails 1.4 - Redis vs H2 Performance</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-06-14T12:18:58+00:00" pubdate data-updated="true">Jun 14<span>th</span>, 2011</time>
+        
+         | <a href="/2011/06/redis-vs-h2/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Recently at a monthly <a href="http://devjam.com/" title="DevJam">DevJam</a> meeting <a href="http://naleid.com/blog/" title="Ted Naleid">Ted Naleid</a> presented on the
+topic of <a href="http://redis.io/" title="Redis">Redis</a> and how its use as a data store and cache.  I was
+intrigued and wanted to delve into Redis more as a semi-persistent data store.
+I came across the <a href="http://www.grails.org/plugin/redis" title="Redis GORM">Redis GORM plugin</a> that allows you to persist POGOs
+directly to Redis via normal GORM operations.  With the release of <a href="http://www.grails.org/blog/view/admin/Grails+1.4.0.M1+is+now+available">Grails
+1.4.0 M1</a>, there have been some changes to the default persistent data
+store from HSQL to an <a href="http://www.h2database.com/html/main.html" title="H2 Database">H2 database</a>.  I wondered just how much faster
+read/write operations could be with Redis (if at all) over the H2 database so
+I set out to write a little test app to see for myself.</p>
+
+<p>I am not going to get into the specifics of the jQuery widget I wrote to do
+this, how to configure it or the semantics on how/why I chose to use the
+deferred object, but please grab the code and have a look at that stuff too.</p>
+
+<p>The source code for this prototype is available at
+<a href="https://github.com/ctoestreich/redis-gorm">https://github.com/ctoestreich/redis-gorm</a>.</p>
+
+<h2>Getting Redis</h2>
+
+<p>The first thing I needed to do was download the windows port of Redis from
+<a href="https://github.com/dmajkic/redis/downloads">https://github.com/dmajkic/redis/downloads</a>.  I downloaded version 2.2.5
+and edited the following lines in the 32bit (or 64bit) redis.conf file:</p>
+
+<p>Uncomment/change the following line (probably a good idea to always have a PW
+on any persistent stores) <em>requirepass a1s2d3f4qwert!</em></p>
+
+<p>You can start redis now while we get the project running</p>
+
+<p><a href="http://www.christianoestreich.com/wp-"><img src="http://www.christianoestreich.com/wp-" alt="" /></a></p>
+
+<h2>Running Grails</h2>
+
+<p>For this particular task I decided to use Grails 1.4.0 M1.  It was a bit
+different than 1.3.7 in getting the client setup working well with the newly
+integrated resources plugin.  I assumed that the wiring would be a little more
+automatic, and it was, but I was still required to manually add the
+r:resources and the jqui tags.  I also had a bit of an issue with IntelliJ
+10.5 not recognizing the Grails 1.4.0 M1 as a valid SDK.  I basically ended up
+coding all the stuff old school in textpad (so forgive any non-static analysis
+friendly code).</p>
+
+<p>I installed the <a href="http://www.grails.org/plugin/redis" title="Grails Redis GORM">Grails Redis GORM</a> plugin which allows you to add the
+following line and expose normal Gorm operations against Redis.</p>
+
+<pre><code>static mapWith = "redis"
+</code></pre>
+
+<p>My objects were pretty simple and consisted of the following nearly identical
+code.</p>
+
+<pre><code>class RedisObject {
+
+  static mapWith = "redis"
+
+  String name
+
+  List someList
+
+  static mapping = {
+
+    name(index:true)
+
+  }
+
+}
+
+
+class GormObject {
+
+  String name
+
+  List someList
+
+}
+</code></pre>
+
+<p>I also added the following to the Config.groovy to get Grails talking to Redis</p>
+
+<pre><code>grails.redis.host="localhost"
+
+grails.redis.port=6379
+
+grails.redis.password="a1s2d3f4qwert!"
+
+grails.redis.pooled=true
+
+grails.redis.resources=15
+
+grails.redis.timeout=5000
+</code></pre>
+
+<p>With your grails home and path set to recognize Grails 1.4.0 M1, start the
+server up.</p>
+
+<pre><code>grails run-app
+</code></pre>
+
+<p>After starting the server navigate to <a href="http://localhost:8080/redis-gorm/dataTest/index" title="local site">http://localhost:8080/redis-
+gorm/dataTest/index</a></p>
+
+<h2>Under The Covers</h2>
+
+<p>What is happening under the covers is multiple ajax requests are being
+performed for both create/save and retrieve against Redis and H2.  I am using
+Highcharts to render the results for the operations realtime using the jQuery
+ajax and deferred libraries.  Every time both (Redis/H2) requests complete it
+doubles (configurable) the number of operations it is trying to perform.  The
+ajax calls return back to the client the time in ms it took to execute the
+request number of operation.  The results will not be graphed until both Redis
+and H2 ajax operations have returned results.</p>
+
+<p>Here is a very simplified flow of what is happening:</p>
+
+<p>create widget &ndash;> performTest &ndash;> defer(getRedis, getGorm) &ndash;> both completed &ndash;>
+collect results data &ndash;> update graph &ndash;> increase record count &ndash;> start from
+performTest again</p>
+
+<p>Here is a snippet of the code used on the controller to conduct the tests. I
+would encourage you to browse and download the code from github for more
+specifics on the client and server code.</p>
+
+<pre><code>def getGorm = {
+
+    def gorms = []
+
+    def duration = benchmark {
+
+      def count = GormObject.count()
+
+      (1..Integer.parseInt(params?.recordCount ?: "2")).each {
+
+        gorms &lt;&lt; GormObject.findById((Math.random() *
+</code></pre>
+
+<p>count).asType(Integer.class))</p>
+
+<pre><code>      }
+
+    }
+
+    println "Gorm found: ${gorms.size()}"
+
+    render text: duration, contentType: "text/plain"
+
+  }
+
+  def getRedis = {
+
+    def redises = []
+
+    def duration = benchmark {
+
+      def count = RedisObject.count()
+
+      (1..Integer.parseInt(params?.recordCount ?: "2")).each {
+
+        redises &lt;&lt; RedisObject.findById((Math.random() *
+</code></pre>
+
+<p>count).asType(Integer.class))</p>
+
+<pre><code>      }
+
+      println "Redis found: ${redises.size()}"
+
+    }
+
+    render text: duration, contentType: "text/plain"
+
+  }
+
+  def makeGorm = {
+
+    Integer total = Integer.parseInt(params?.recordCount ?: "100")
+
+    def duration = benchmark {
+
+      (1..total).each {
+
+        new GormObject(name: "GormObject" + it, someList:
+</code></pre>
+
+<p>makeListData(10)).save()</p>
+
+<pre><code>      }
+
+    }
+
+    render text: duration, contentType: "text/plain"
+
+  }
+
+  def makeRedis = {
+
+    Integer total = Integer.parseInt(params?.recordCount ?: "100")
+
+    def duration = benchmark {
+
+      (1..total).each {
+
+        new RedisObject(name: "RedisObject" + it, someList:
+</code></pre>
+
+<p>makeListData(10)).save()</p>
+
+<pre><code>      }
+
+    }
+
+    render text: duration, contentType: "text/plain"
+
+  }
+
+   private makeListData(count) {
+
+    def listData = []
+
+    (1..count).each {
+
+      listData &lt;&lt; ["listData${it}"]     }     listData   }   private
+</code></pre>
+
+<p>benchmark = { closure &ndash;></p>
+
+<pre><code>    def start = System.currentTimeMillis()
+
+    closure.call()
+
+    def now = System.currentTimeMillis()
+
+    now - start
+
+  }
+</code></pre>
+
+<p>When invoking the read operation I wanted to grab a random set of results so I
+opted to use a random number generator and findByID(rand) to grab single
+records as opposed to a list operation.  There is probably some inherent
+overhead in this type of operation as opposed to grabbing a whole list at a
+time.  There is probably a better way to do this, but as the count of records
+to retrieve goes up, I was really hoping to see the difference in read
+operation time between the two by forcing more reads.</p>
+
+<h2>My Observations</h2>
+
+<p>First I should mention that I haven&rsquo;t collected and analyzed with any detail
+specific numbers.  I have mainly just used the graphical output and results
+generated from the controllers as my point of reference.  I think depending on
+the machine the mileage of the tests and results will vary.</p>
+
+<p>Redis is consistently faster on the read operations while the save seems to be
+pretty close and H2 keeps pace with Redis.  The tests do seem to jump around a
+bit, but generally speaking Redis read/write operations are faster that those
+of H2 running in memory.  I suppose I expected this result as Redis is best
+suited as a key/value store and lacks some of the more robust operations
+supported in a product more suited for relational data modeling, but I think
+as a simple and fast data store, Redis is more than a viable option.</p>
+
+<h2>Things To Note</h2>
+
+<p>Running the tests more times up to a number like 65k test items without
+stopping the server (just refreshing the browser) will help get items into the
+databases so there is more objects to randomize against the read operation.</p>
+
+<p>I would like to see these same tests conducted using different criteria-based
+and list operations so the db has to do more of the work in joining and
+aggregating data on the read operations.  Maybe next week.</p>
+
+<h2>Sample Output</h2>
+
+<p>The results from this graph show the time in ms it took to process a set
+number of records per operation type.  The script will process them in blocks
+of 2,4,8,16,32 and so on until it hits some limit set via the widget.  Then
+the results are graphed for the time to execute 2 saves, 4 saves, 8 saves,
+etc.  The same is true of the read operations graph and test.</p>
+
+<p><a href="http://www.christianoestreich.com/wp-"><img src="http://www.christianoestreich.com/wp-" alt="" /></a></p>
+
+<h2>Conclusion</h2>
+
+<p>I have more research I would like to conduct on this topic by comparing a
+physical data store like MySQL against Redis for example.  I don&rsquo;t have an
+immediate need for a simple key/value store or cache at the moment, but I
+would love to incorporate Redis into our application stack in the the near
+future.</p>
+
+<p>The source code for this prototype is available at
+<a href="https://github.com/ctoestreich/redis-gorm">https://github.com/ctoestreich/redis-gorm</a>.</p>
+
+<p>(Grails 1.4.0 M1)</p>
+
+<p>content/uploads/2011/06/start_redis.png (start_redis)</p>
+
+<p>content/uploads/2011/06/start_redis.png</p>
+
+<p>content/uploads/2011/06/graph1.png (Results Graph)</p>
+
+<p>content/uploads/2011/06/graph1.png</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+      <a class="prev" href="/blog/page/4/">&larr; Older</a>
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+    <a class="next" href="/blog/page/2/">Newer &rarr;</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        var disqus_script = 'count.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

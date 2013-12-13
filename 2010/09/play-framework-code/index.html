@@ -1,0 +1,499 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Play!(ing) with some code - Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="I have been doing some analysis on Lift and Scala.  I really like it
+so far despite the drawbacks of poor code examples available online.  I also &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/2010/09/play-framework-code/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Play!(ing) With Some Code</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2010-09-15T18:14:03+00:00" pubdate data-updated="true">Sep 15<span>th</span>, 2010</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>I have been doing some analysis on Lift and Scala.  I really like it
+so far despite the drawbacks of poor code examples available online.  I also
+have some personal projects that I am working on at home and wanted to expand
+my knowledge of other frameworks so I decided to check out the <a href="http://www.playframework.org/" title="Play! Framework">Play! Framework</a>.</p>
+
+<p>I ran through the <a href="http://www.playframework.org/documentation/1.1-trunk/home">Learn</a> link on the site for the new 1.1 framework.  It
+got me up and running in no time flat.  I was able to see the default page in
+a heart beat and it was very easy to go from zero to functional with minimal
+setup.</p>
+
+<p>The two things that I wanted to accomplish were to find a framework that was
+easy to get running, that supported an MVC model and something with Scala
+support.</p>
+
+<p>As I am a re-convert back into Java after spending almost a decade doing
+Microsoft development, I have really tried to immerse myself in more than just
+plain vanilla Java development.  I have found Scala to be a breadth of fresh
+air and a new challenge to help me dust off some of those idle brain cells.</p>
+
+<p>To get Scala support with play you simply have to add the play (play.bat for
+windows or play for mac) into your class path.  For the Mac you also need to
+&ldquo;chmod -x play&rdquo; and &ldquo;chmod 775 play&rdquo; on the play file in there to make it
+executable as well.</p>
+
+<p><a href="http://build.christianoestreich.com/wp-content/uploads/2010/09/Screen-shot-2010-09-15-at-8.11.21-PM.png"><img src="http://build.christianoestreich.com/wp-content/uploads/2010/09/Screen-shot-2010-09-15-at-8.11.21-PM.png" title="Play! Framework Setup" alt="Play! Framework Setting Permissions Example Code" /></a></p>
+
+<p>After setting up Scala and looking at their docs, I started to discover some
+slight differences in what code is required to actually get their examples to
+work.  For example their code had the following code to access a Jpa class
+within a test.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">import</span> <span class="nn">models.User</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.scalatest.matchers.ShouldMatchers</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">play.test._</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">class</span> <span class="nc">SpecStyle</span> <span class="kd">extends</span> <span class="n">UnitFlatSpec</span> <span class="n">with</span> <span class="n">ShouldMatchers</span> <span class="o">{</span>
+</span><span class='line'><span class="s">&quot;Creating a user&quot;</span> <span class="n">should</span> <span class="s">&quot;be succesfull&quot;</span> <span class="n">in</span> <span class="o">{</span>
+</span><span class='line'> <span class="n">val</span> <span class="n">user</span> <span class="o">=</span> <span class="k">new</span> <span class="n">User</span><span class="o">(</span><span class="s">&quot;bob@gmail.com&quot;</span><span class="o">,</span> <span class="s">&quot;secret&quot;</span><span class="o">,</span> <span class="s">&quot;Bob&quot;</span><span class="o">).</span><span class="na">save</span><span class="o">()</span>
+</span><span class='line'> <span class="n">val</span> <span class="n">bob</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="na">find</span><span class="o">(</span><span class="s">&quot;byEmail&quot;</span><span class="o">,</span> <span class="s">&quot;bob@gmail.com&quot;</span><span class="o">).</span><span class="na">first</span>
+</span><span class='line'> <span class="n">bob</span> <span class="n">should</span> <span class="n">not</span> <span class="nf">be</span> <span class="o">(</span><span class="kc">null</span><span class="o">)</span>
+</span><span class='line'> <span class="n">bob</span><span class="o">.</span><span class="na">fullname</span> <span class="n">should</span> <span class="nf">be</span> <span class="o">(</span><span class="s">&quot;Bob&quot;</span><span class="o">)</span>
+</span><span class='line'> <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I had to use the following to get the code to run.  I am not sure if I did
+something wrong or of the example code was wrong but here is what I had to do
+to get it working.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">import</span> <span class="nn">models.User</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.scalatest.matchers.ShouldMatchers</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">play.test._</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">class</span> <span class="nc">SpecStyle</span> <span class="kd">extends</span> <span class="n">UnitFlatSpec</span> <span class="n">with</span> <span class="n">ShouldMatchers</span> <span class="o">{</span>
+</span><span class='line'><span class="s">&quot;Creating a user&quot;</span> <span class="n">should</span> <span class="s">&quot;be succesfull&quot;</span> <span class="n">in</span> <span class="o">{</span>
+</span><span class='line'> <span class="n">val</span> <span class="n">user</span> <span class="o">=</span> <span class="k">new</span> <span class="n">User</span><span class="o">(</span><span class="s">&quot;bob@gmail.com&quot;</span><span class="o">,</span> <span class="s">&quot;secret&quot;</span><span class="o">,</span> <span class="s">&quot;Bob&quot;</span><span class="o">).</span><span class="na">save</span><span class="o">()</span>
+</span><span class='line'> <span class="n">val</span> <span class="n">bob</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="na">find</span><span class="o">(</span><span class="s">&quot;byEmail&quot;</span><span class="o">,</span> <span class="s">&quot;bob@gmail.com&quot;</span><span class="o">).</span><span class="na">first</span>
+</span><span class='line'> <span class="n">bob</span> <span class="n">should</span> <span class="n">not</span> <span class="nf">be</span> <span class="o">(</span><span class="kc">null</span><span class="o">)</span>
+</span><span class='line'> <span class="n">bob</span><span class="o">.</span><span class="na">get</span><span class="o">.</span><span class="na">fullname</span> <span class="n">should</span> <span class="nf">be</span> <span class="o">(</span><span class="s">&quot;Bob&quot;</span><span class="o">)</span>
+</span><span class='line'> <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The only thing that is different is the fact that I had to call the get on
+bob.get.fullname as calling bob.firstname wasn&rsquo;t getting me a User object that
+I could check properties on.  If anyone has any ideas on this by all means let
+me know.  Here is the user class/object.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">models</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">java.util._</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">play.db.jpa._</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">play.data.Validators._</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@Entity</span>
+</span><span class='line'><span class="nd">@Table</span><span class="o">(</span><span class="n">uniqueConstraints</span><span class="o">=</span><span class="n">Array</span><span class="o">(</span><span class="k">new</span> <span class="n">UniqueConstraint</span><span class="o">(</span><span class="n">columnNames</span><span class="o">=</span><span class="n">Array</span><span class="o">(</span><span class="s">&quot;email&quot;</span><span class="o">))))</span>
+</span><span class='line'><span class="kd">class</span> <span class="nf">User</span><span class="o">(</span>
+</span><span class='line'> <span class="nd">@Email</span>
+</span><span class='line'> <span class="nd">@Required</span>
+</span><span class='line'> <span class="n">var</span> <span class="nl">email:</span> <span class="n">String</span><span class="o">,</span>
+</span><span class='line'>
+</span><span class='line'> <span class="nd">@Required</span>
+</span><span class='line'> <span class="n">var</span> <span class="nl">password:</span> <span class="n">String</span><span class="o">,</span>
+</span><span class='line'> <span class="n">var</span> <span class="nl">fullname:</span> <span class="n">String</span>
+</span><span class='line'><span class="o">)</span> <span class="kd">extends</span> <span class="n">Model</span> <span class="o">{</span>
+</span><span class='line'> <span class="n">var</span> <span class="n">isAdmin</span> <span class="o">=</span> <span class="kc">false</span>
+</span><span class='line'> <span class="n">override</span> <span class="n">def</span> <span class="nf">toString</span><span class="o">()</span> <span class="o">=</span> <span class="n">email</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">object</span> <span class="n">User</span> <span class="kd">extends</span> <span class="n">QueryOn</span><span class="o">[</span><span class="n">User</span><span class="o">]</span> <span class="o">{</span>
+</span><span class='line'> <span class="n">def</span> <span class="nf">connect</span><span class="o">(</span><span class="nl">email:</span> <span class="n">String</span><span class="o">,</span> <span class="nl">password:</span> <span class="n">String</span><span class="o">)</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'> <span class="n">find</span><span class="o">(</span><span class="s">&quot;byEmailAndPassword&quot;</span><span class="o">,</span> <span class="n">email</span><span class="o">,</span> <span class="n">password</span><span class="o">).</span><span class="na">first</span>
+</span><span class='line'> <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>What I really love about the play framework is the integrated testing,
+especially with Selenium, that comes for free with the framework.  More on
+that to come soon.  I will post more code to get up and running, but the
+sample code on the play site is very easy to get you up and running.</p>
+
+<p>On a side note, I have been using my Mac more and more for development I
+really like it now that I have a two button mouse&hellip; :)</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">ctoestreich</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2010-09-15T18:14:03+00:00" pubdate data-updated="true">Sep 15<span>th</span>, 2010</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/technology/'>Technology</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://www.christianoestreich.com/2010/09/play-framework-code/" data-via="ctoestreich" data-counturl="http://www.christianoestreich.com/2010/09/play-framework-code/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/2010/09/lift-me-up/" title="Previous Post: Lift Me Up">&laquo; Lift Me Up</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/2010/10/lift-reflection/" title="Next Post: Lift and Reflection">Lift and Reflection &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.christianoestreich.com/2010/09/play-framework-code/';
+        var disqus_url = 'http://www.christianoestreich.com/2010/09/play-framework-code/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

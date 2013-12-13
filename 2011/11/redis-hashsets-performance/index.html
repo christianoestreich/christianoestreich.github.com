@@ -1,0 +1,683 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Redis Hashsets - Performance Analysis & Numerical Key Compression - Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="Recently I read a pretty interesting blog post by Mike Krieger, co-founder of Instagram. The summary of the post was they were faced with an &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/2011/11/redis-hashsets-performance/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Redis Hashsets - Performance Analysis & Numerical Key Compression</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-11-03T16:23:06+00:00" pubdate data-updated="true">Nov 3<span>rd</span>, 2011</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Recently I read a pretty interesting <a href="http://instagram-engineering.tumblr.com/post/12202313862/storing-hundreds-of-millions-of-simple-key-value-pairs" title="Redis Instagram">blog post</a> by Mike Krieger, co-founder of Instagram.  The summary of the post was they were faced with an interesting challenge in storing 300 million key value pairs for consumer to photo resolution.  They even went as far as to write an interesting test in
+python and posted it on <a href="https://gist.github.com/1329319">github gist</a>.</p>
+
+<p>I wanted to see if I could improve a bit on his memory allocation in the redis
+hash so I set out to write an algorithm that might help further reduce the
+overhead.</p>
+
+<!-- more -->
+
+
+<p>I was using <a href="http://groovy.codehaus.org/Groovy+Console" title="Groovy Console">groovyconsole</a> to run all of these scripts.</p>
+
+<p>Here is a comparison of using a traditional numerical id to one of my
+compressed ids:</p>
+
+<div><script src='https://gist.github.com/1337772.js'></script>
+<noscript><pre><code>def r = new Random()
+def num = r.nextInt(12000000).toString()
+println num
+println num.bytes.length
+println encodeNumber(num, getEncoder())
+println encodeNumber(num, getEncoder()).bytes.length
+
+def getEncoder(){
+    ['1','2','3','4','5','6','7','8','9','0','-','=','!','@','#','$','%','^','&amp;','*','(',')','_',
+    '+','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']',
+    '\\',';','\'',',','.','/','{','}','|',':','\&quot;','&lt;','&gt;','?','`','~',' ','ä','Ä','Ü','Ö','ü']
+}
+
+String encodeNumber(number, encoder){
+    String encoded = &quot;&quot;
+    String numberString = number.toString()
+    numberString = ((numberString.length() % 2) != 0 ? &quot;0$numberString&quot; : numberString)
+    Integer token = numberString.length()-1
+    while(token &gt;= 0){
+        encoded += encoder[numberString[token-1..token].toInteger()]
+        token-=2
+    }    
+    encoded
+}</code></pre></noscript></div>
+
+
+<p>By adding the list lookup and key transformation it does add some additional
+time over using plain numeric keys.  For the reverse transformation I played
+around with using both a list and a map.  I think it is pretty clear the map
+is quite a bit faster in general for decoding.  I did however see the
+performance of the redis operations not reflect this speed increase since I am
+only doing an encode on the values in that script.  Below is the code to test
+the speed differences in encoding and decoding with lists and maps.</p>
+
+<p>The results I saw were consistent with the following:</p>
+
+<pre><code>5000 encode map took 0.0286 ms each on avg and 143 ms total
+5000 decode map took 0.0496 ms each on avg and 248 ms total
+5000 encode list took 0.0186 ms each on avg and 93 ms total
+5000 decode list took 1.5004 ms each on avg and 7502 ms total
+</code></pre>
+
+<div><script src='https://gist.github.com/1337848.js'></script>
+<noscript><pre><code>def tests = 5000
+
+def enm = {n, e-&gt; encodeNumberMap(n, e).toString() }
+def dnm = {n, e-&gt; decodeNumberMap(n, e).toString() }
+performTest(&quot;map&quot;, tests, getEncoderMap(), getDecoderMap(), enm, dnm) 
+
+def en = {n, e-&gt; encodeNumber(n, e).toString() }
+def dn = {n, e-&gt; decodeNumber(n, e).toString() }
+performTest(&quot;list&quot;, tests, getEncoder(), getEncoder(), en, dn) 
+
+def performTest(name, tests, encoder, decoder, encd, decd){
+    def decodeTime = [], encodeTime = []
+    def encodedNumber, decodedNumber, number
+    def random = new Random()
+    
+    tests.times {
+        number = Math.abs(random.nextLong())
+        encodeTime &lt;&lt; benchmark {
+            encodedNumber = encd.call(number, encoder)
+        }
+        decodeTime &lt;&lt; benchmark {
+            decodedNumber = decd.call(encodedNumber, decoder)
+        }
+        //println &quot;$number == $decodedNumber using coded $encodedNumber&quot;
+        assert number.toString() == decodedNumber
+    }
+    
+    println &quot;$tests encode $name took ${(encodeTime.sum() / encodeTime.size())} ms each on avg and ${encodeTime.sum()} ms total&quot;
+    println &quot;$tests decode $name took ${(decodeTime.sum() / decodeTime.size())} ms each on avg and ${decodeTime.sum()} ms total&quot;
+    println &quot;&quot;
+}
+
+def getEncoder(){
+    ['1','2','3','4','5','6','7','8','9','0','-','=','!','@','#','$','%','^','&amp;','*','(',')','_',
+    '+','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']',
+    '\\',';','\'',',','.','/','{','}','|',':','\&quot;','&lt;','&gt;','?','`','~',' ','ä','Ä','Ü','Ö','ü']
+}
+
+def getDecoderMap(){
+    ['1':0,'2':1,'3':2,'4':3,'5':4,'6':5,'7':6,'8':7,'9':8,'0':9,'-':10,'=':11,'!':12,'@':13,'#':14,'$':15,'%':16,'^':17,'&amp;':18,'*':19,
+    '(':20,')':21,'_':22,'+':23,'a':24,'b':25,'c':26,'d':27,'e':28,'f':29,'g':30,'h':31,'i':32,'j':33,'k':34,'l':35,'m':36,'n':37,'o':38,'p':39,'q':40,
+    'r':41,'s':42,'t':43,'u':44,'v':45,'w':46,'x':47,'y':48,'z':49,'A':50,'B':51,'C':52,'D':53,'E':54,'F':55,'G':56,'H':57,'I':58,'J':59,'K':60,'L':61,
+    'M':62,'N':63,'O':64,'P':65,'Q':66,'R':67,'S':68,'T':69,'U':70,'V':71,'W':72,'X':73,'Y':74,'Z':75,'[':76,']':77,
+    '\\':78,';':79,'\'':80,',':81,'.':82,'/':83,'{':84,'}':85,'|':86,':':87,'\&quot;':88,'&lt;':89,'&gt;':90,'?':91,'`':92,'~':93,' ':94,'ä':95,'Ä':96,'Ü':97,'Ö':98,'ü':99]
+}
+
+def getEncoderMap(){
+    //reverse map for encoder, probably would create the map manually for less execute time
+    Map encoderMap = [:]
+    getDecoderMap().collect{ encoderMap.put((it.value.toString().length() == 1 ? &quot;0${it.value}&quot;.toString() : it.value.toString()), it.key) }
+    encoderMap 
+}
+
+def decodeNumber(number, encoder){
+    String decoded = &quot;&quot;
+    Integer num = 0
+    String numberString = number.toString()
+    Integer token = numberString.length()-1
+    while(token &gt;= 0){ 
+        encoder.eachWithIndex{o,i-&gt; 
+            if(o == numberString[token]) 
+                num = i
+                return 
+        }
+        decoded = decoded + (num.toString().length() == 1 ? &quot;0$num&quot; : num)
+        token-=1
+    }
+    (decoded.startsWith(&quot;0&quot;) ? decoded[1..decoded.length()-1] : decoded)
+}
+
+String encodeNumber(number, encoder){
+    String encoded = &quot;&quot;
+    String numberString = number.toString()
+    numberString = ((numberString.length() % 2) != 0 ? &quot;0$numberString&quot; : numberString)
+    Integer token = numberString.length()-1
+    while(token &gt;= 0){
+        encoded += encoder[numberString[token-1..token].toInteger()]
+        token-=2
+    }    
+    encoded
+}
+
+String decodeNumberMap(number, map){
+    String decoded = &quot;&quot;
+    String numberString = number.toString()
+    Integer num = 0
+    Integer token = numberString.length()-1
+    while(token &gt;= 0){ 
+        num = map[numberString[token]]
+        decoded = decoded + (num.toString().length() == 1 ? &quot;0$num&quot; : num)
+        token-=1
+    }
+    (decoded.startsWith(&quot;0&quot;) ? decoded[1..decoded.length()-1] : decoded)
+}
+
+String encodeNumberMap(number, map){
+    String encoded = &quot;&quot;
+    String numberString = number.toString()
+    numberString = ((numberString.length() % 2) != 0 ? &quot;0$numberString&quot; : numberString)
+    Integer token = numberString.length()-1
+    while(token &gt;= 0){
+        encoded += map[numberString[token-1..token].toString()].toString()
+        token-=2
+    }    
+    encoded
+}
+
+Long benchmark(closure) {
+    def start = System.currentTimeMillis()
+    closure.call()
+    def now = System.currentTimeMillis()
+    now - start
+}</code></pre></noscript></div>
+
+
+<p>I wrote a similar test as the one provided by Mike
+<a href="https://gist.github.com/1329319">https://gist.github.com/1329319 </a>using compressed ids instead of the full
+numerical ids and was able to save an additional 18% in space going from
+17mb/1,000,000 keys to 14mb/1,000,000 keys.  I probably could squeeze a little
+more efficiency out of the memory and redis hash if I ran both the first and
+second ids through the compression methods.  For the space savings to be
+really worth while I am assuming the number would need to be at least 4 digits
+long as the compression would only be a byte going from 3 to 2 (33%) as
+opposed to going from 4 to 2 (50%).  Five and six digit ids will both reduce
+to 3 chars, seven and eight to 4, etc.  I am doing a 2->1 reduce and have to
+pad the odd length keys with a 0 in effect giving you (n) and (n-1) having the
+same number of bytes in memory (where n = all even length keys).</p>
+
+<p>Here is the complete script I wrote to test the id space reduction hypothesis.
+I would certainly welcome any feedback on additional improvements that can be
+made to the code.  I think there are probably further reductions in memory to
+be had.</p>
+
+<div><script src='https://gist.github.com/1337648.js'></script>
+<noscript><pre><code>@Grapes([
+    @Grab('redis.clients:jedis:1.5.1'),
+    @GrabConfig(systemClassLoader=true)
+])
+ 
+import redis.clients.jedis.*
+
+performTest(&quot;unencoded&quot;, null) {n, e-&gt;
+    n.toString()
+}
+
+performTest(&quot;encoder map&quot;, getEncoderMap()) {n, e-&gt;
+    encodeNumberMap(n, e).toString()
+}
+
+performTest(&quot;encoder list&quot;, getEncoder()) {n, e-&gt;
+    encodeNumber(n, e).toString()
+}
+
+def performTest(name, encoder, closure){
+    Random random = new Random()
+    Integer NUM_ENTRIES = 1000000
+    Integer MAX_VALUE = 12000000
+    Integer COMMIT_FREQUENCY = (NUM_ENTRIES/10)
+    Jedis jedis = new Jedis(&quot;localhost&quot;)
+    
+    jedis.flushAll()
+    Pipeline p = jedis.pipelined()
+    
+    println &quot;jedis used memory at start : ${getRedisProperty(jedis, 'used_memory')} bytes&quot;
+    println &quot;testing $name size of putting $NUM_ENTRIES objects into redis hash&quot;
+    
+    def duration = benchmark {
+        NUM_ENTRIES.times {
+            number = Math.abs(random.nextInt(MAX_VALUE))
+            bucket = Math.floor(number / 500)
+            p.hset(bucket.toString(), it.toString(), closure.call(number, encoder))
+            if((it % COMMIT_FREQUENCY) == 0){
+                p.execute()
+                p = jedis.pipelined()
+            }
+        }
+        p.execute()
+    }
+    println &quot;redis used memory at after $name hset operation : ${getRedisProperty(jedis, 'used_memory')} bytes&quot; 
+    println &quot;took $duration ms to complete $name&quot;
+    println &quot;&quot;
+}
+
+def getEncoder(){
+    ['1','2','3','4','5','6','7','8','9','0','-','=','!','@','#','$','%','^','&amp;','*','(',')','_',
+    '+','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']',
+    '\\',';','\'',',','.','/','{','}','|',':','\&quot;','&lt;','&gt;','?','`','~',' ','ä','Ä','Ü','Ö','ü']
+}
+
+def getDecoderMap(){
+    ['1':0,'2':1,'3':2,'4':3,'5':4,'6':5,'7':6,'8':7,'9':8,'0':9,'-':10,'=':11,'!':12,'@':13,'#':14,'$':15,'%':16,'^':17,'&amp;':18,'*':19,
+    '(':20,')':21,'_':22,'+':23,'a':24,'b':25,'c':26,'d':27,'e':28,'f':29,'g':30,'h':31,'i':32,'j':33,'k':34,'l':35,'m':36,'n':37,'o':38,'p':39,'q':40,
+    'r':41,'s':42,'t':43,'u':44,'v':45,'w':46,'x':47,'y':48,'z':49,'A':50,'B':51,'C':52,'D':53,'E':54,'F':55,'G':56,'H':57,'I':58,'J':59,'K':60,'L':61,
+    'M':62,'N':63,'O':64,'P':65,'Q':66,'R':67,'S':68,'T':69,'U':70,'V':71,'W':72,'X':73,'Y':74,'Z':75,'[':76,']':77,
+    '\\':78,';':79,'\'':80,',':81,'.':82,'/':83,'{':84,'}':85,'|':86,':':87,'\&quot;':88,'&lt;':89,'&gt;':90,'?':91,'`':92,'~':93,' ':94,'ä':95,'Ä':96,'Ü':97,'Ö':98,'ü':99]
+}
+
+def getEncoderMap(){
+    //reverse map for encoder, probably would create the map manually for less execute time
+    Map encoderMap = [:]
+    getDecoderMap().collect{ encoderMap.put((it.value.toString().length() == 1 ? &quot;0${it.value}&quot;.toString() : it.value.toString()), it.key) }
+    encoderMap 
+}
+
+def decodeNumber(number, encoder){
+    String decoded = &quot;&quot;
+    Integer num = 0
+    String numberString = number.toString()
+    Integer token = numberString.length()-1
+    while(token &gt;= 0){ 
+        encoder.eachWithIndex{o,i-&gt; 
+            if(o == numberString[token]) 
+                num = i
+                return 
+        }
+        decoded = decoded + (num.toString().length() == 1 ? &quot;0$num&quot; : num)
+        token-=1
+    }
+    (decoded.startsWith(&quot;0&quot;) ? decoded[1..decoded.length()-1] : decoded)
+}
+
+String encodeNumber(number, encoder){
+    String encoded = &quot;&quot;
+    String numberString = number.toString()
+    numberString = ((numberString.length() % 2) != 0 ? &quot;0$numberString&quot; : numberString)
+    Integer token = numberString.length()-1
+    while(token &gt;= 0){
+        encoded += encoder[numberString[token-1..token].toInteger()]
+        token-=2
+    }    
+    encoded
+}
+
+String decodeNumberMap(number, map){
+    String decoded = &quot;&quot;
+    String numberString = number.toString()
+    Integer num = 0
+    Integer token = numberString.length()-1
+    while(token &gt;= 0){ 
+        num = map[numberString[token]]
+        decoded = decoded + (num.toString().length() == 1 ? &quot;0$num&quot; : num)
+        token-=1
+    }
+    (decoded.startsWith(&quot;0&quot;) ? decoded[1..decoded.length()-1] : decoded)
+}
+
+String encodeNumberMap(number, map){
+    String encoded = &quot;&quot;
+    String numberString = number.toString()
+    numberString = ((numberString.length() % 2) != 0 ? &quot;0$numberString&quot; : numberString)
+    Integer token = numberString.length()-1
+    while(token &gt;= 0){
+        encoded += map[numberString[token-1..token].toString()].toString()
+        token-=2
+    }    
+    encoded
+}
+
+String getRedisProperty(jedis, prop){
+    Map map = [:]
+    jedis.info().split('\n').each {param -&gt;
+        def p = param.split(&quot;:&quot;)
+        map[p[0]] = p[1]
+    }
+    map[prop]
+}
+
+Long benchmark(closure) {
+    def start = System.currentTimeMillis()
+    closure.call()
+    def now = System.currentTimeMillis()
+    now - start
+}
+</code></pre></noscript></div>
+
+
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">ctoestreich</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-11-03T16:23:06+00:00" pubdate data-updated="true">Nov 3<span>rd</span>, 2011</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/technology/'>Technology</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://www.christianoestreich.com/2011/11/redis-hashsets-performance/" data-via="ctoestreich" data-counturl="http://www.christianoestreich.com/2011/11/redis-hashsets-performance/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/2011/10/grails-cxf-client-updated.markdown/" title="Previous Post: Grails CXF Client - Updated">&laquo; Grails CXF Client - Updated</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/2011/11/injectable-grails-plugins/" title="Next Post: Allowing Users To Inject Custom Beans Into Your Grails Plugin">Allowing Users To Inject Custom Beans Into Your Grails Plugin &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.christianoestreich.com/2011/11/redis-hashsets-performance/';
+        var disqus_url = 'http://www.christianoestreich.com/2011/11/redis-hashsets-performance/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

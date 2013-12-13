@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: JavaScript | Christian Oestreich]]></title>
+  <link href="http://www.christianoestreich.com/blog/categories/javascript/atom.xml" rel="self"/>
+  <link href="http://www.christianoestreich.com/"/>
+  <updated>2013-12-13T20:45:33+00:00</updated>
+  <id>http://www.christianoestreich.com/</id>
+  <author>
+    <name><![CDATA[Christian Oestreich]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Knockout Validation Rules Engine]]></title>
+    <link href="http://www.christianoestreich.com/2013/12/knockout-validation-rules-engine/"/>
+    <updated>2013-12-13T10:00:00+00:00</updated>
+    <id>http://www.christianoestreich.com/2013/12/knockout-validation-rules-engine</id>
+    <content type="html"><![CDATA[<p>We have recently begun working with <a href="http://knockoutjs.com/" title="Knockout JS">Knockout.js</a> and needed a way to run validation on the models.  We found the amazing plugin <a href="https://github.com/Knockout-Contrib/Knockout-Validation" title="Knockout Validation">Knockout.Validation</a>.  This plugin did an awesome job and we were able to port over all our jQuery Validation rules fairly easy.  As I was working with the plugin, my model grew and additional models were being created it became tedious having to append every rule to every model property and not remember which rules applied to which model properties across model contexts.  Thus the concept of the <a href="https://github.com/ctoestreich/knockout-validation-rule-engine" title="Knockout Validation Rule Engine">Knockout Validation Rule Engine</a> was born.  A working example can be found via <a href="http://ctoestreich.github.io/knockout-validation-rule-engine/" title="Running Example">github pages</a></p>
+
+<!-- more -->
+
+
+<h2>Getting Started</h2>
+
+<p>Download the latest <a href="https://github.com/ctoestreich/knockout-validation-rule-engine/tree/master/build" title="Knockout Validation Rule Engine Dist">knockout-rule-engine</a> file.</p>
+
+<p>Define a rule set that uses the parent key as the name of the model property you want to map to.  If you wanted to set an email rule for a model with a property of userEmail, you would provide the following rule set.</p>
+
+<p>``` javascript
+define([&lsquo;knockout&rsquo;, &lsquo;knockout-rule-engine&rsquo;], function (ko, RuleEngine) {</p>
+
+<pre><code>var ruleSet = {
+    userEmail: { email: true, required: true }
+};
+
+var ruleEngine = new RuleEngine(ruleSet);
+
+var model = {
+    userEmail: ko.observable('')
+};
+
+ruleEngine.apply(model);
+
+ko.applyBindings(model, $('html')[0]);
+</code></pre>
+
+<p>});
+```</p>
+
+<p>This would be equivalent to the following code.</p>
+
+<p>``` javascript
+define([&lsquo;knockout&rsquo;], function (ko) {</p>
+
+<pre><code>var model = {
+    userEmail: ko.observable('').extend({email: true, required: true});
+};
+
+ko.applyBindings(model, $('html')[0]);
+</code></pre>
+
+<p>});
+```</p>
+
+<h2>Override Knockout Validation Options</h2>
+
+<p>You can pass in the options you want to use for the knockout.validation library as the optional second param in the constructor.  For example if you wanted to disable the validation plugin from auto inserting messages you would use the following.</p>
+
+<p>``` javascript
+define([&lsquo;knockout&rsquo;, &lsquo;knockout-rule-engine&rsquo;], function (ko, RuleEngine) {</p>
+
+<pre><code>var ruleSet = {
+    userEmail: { email: true, required: true }
+};
+
+var ruleEngine = new RuleEngine(ruleSet, {insertMessages: false});
+
+var model = {
+    userEmail: ko.observable('')
+};
+
+ruleEngine.apply(model);
+
+ko.applyBindings(model, $('html')[0]);
+</code></pre>
+
+<p>});
+```</p>
+
+<p>See <a href="https://github.com/Knockout-Contrib/Knockout-Validation/wiki/Configuration" title="Knockout Validation Configuration">Configuration Options</a> for details on all the Knockout.Validation options.</p>
+
+<h2>Deep Mapping</h2>
+
+<p>By default the plugin will attempt to recurse your model tree and look at all properties and try and match rules against them.  If you only want to apply rules to the first level object simply pass a flag with deep set to false in the options param.</p>
+
+<p>``` javascript
+define([&ldquo;knockout&rdquo;, &ldquo;knockout-rule-engine&rdquo;, &ldquo;rules/address/rules&rdquo;], function (ko, RuleEngine, personRules) {</p>
+
+<pre><code>var ruleEngine = new RuleEngine(personRules, {deep: false});
+... do work ...
+</code></pre>
+
+<p>});
+```</p>
+
+<h2>Reusing rules</h2>
+
+<p>If you store your rules in a common directory and include them via require into your models you will ensure you have a common experience across your site.  See <a href="https://github.com/ctoestreich/knockout-validation-rule-engine/blob/master/app/js/main.js" title="Knockout Validation Rule Engine Main.js">main.js</a> for more detailed examples.</p>
+
+<p>``` javascript
+define([&lsquo;filters/filters&rsquo;], function (filters) {</p>
+
+<pre><code>return {
+    address1: {
+        required: true,
+        noSpecialChars: true,
+        filter: [filters.noSpecialChars, filters.ltrim]
+    },
+    address2: {
+        noSpecialChars: true,
+        filter: [filters.noSpecialChars, filters.ltrim]
+    },
+    city: {
+        required: true,
+        noSpecialChars: true,
+        filter: [filters.noSpecialChars, filters.ltrim]
+    },
+    state: {
+        validSelectValue: {
+            message: 'Please select a state.'
+        }
+    },
+    zipCode: {
+        required: true,
+        validDigitLength: {
+            params: 5,
+            message: 'Please enter a valid zip code (XXXXX).'
+        },
+        filter: filters.onlyDigits
+    },
+    phone: {
+        required: true,
+        pattern: {
+            message: 'Invalid phone number. (XXX-XXX-XXXX)',
+            params: /^\D?(\d{3})\D?\D?(\d{3})\D?(\d{4})$/
+        }
+    }
+};
+</code></pre>
+
+<p>});
+```</p>
+
+<p>Then you can include this module named rules/address/rules.js into any model that has address or nested address properties that match the keys above (address1, address2, etc).</p>
+
+<p>``` javascript</p>
+
+<p>define([&ldquo;knockout&rdquo;, &ldquo;knockout-rule-engine&rdquo;, &ldquo;rules/address/rules&rdquo;], function (ko, RuleEngine, personRules) {</p>
+
+<pre><code>// set deep to false if you do not want to traverse child properties on the model
+// var ruleEngine = new RuleEngine(personRules, {deep: false});
+var ruleEngine = new RuleEngine(personRules);
+
+var PhoneModel = function () {
+    return {
+        phone: ko.observable('')
+    };
+};
+
+var AddressModel = function () {
+    return {
+        address1: ko.observable(''),
+        address2: ko.observable(''),
+        city: ko.observable(''),
+        state: ko.observable(''),
+        zipCode: ko.observable(''),
+        phone: new PhoneModel()
+    };
+};
+
+var personModel = {
+    firstName: ko.observable(''),
+    lastName: ko.observable(''),
+    middleName: ko.observable(''),
+    address: new AddressModel()
+};
+
+// example of wiring a field at apply time
+ruleEngine.apply(personModel);
+
+ko.applyBindings(personModel, $('html')[0]);
+</code></pre>
+
+<p>});
+```</p>
+
+<h2>Adding Validation Rules At Runtime</h2>
+
+<p>If you have already instantiated the RuleEngine and need to add a rule later at runtime you can do so via the addRule method.</p>
+
+<p>``` javascript
+ruleEngine.addRule(&lsquo;nameNotTom&rsquo;, {</p>
+
+<pre><code>validator: function (val) {
+    return val !== 'Tom';
+},
+message: 'Your name can not be Tom!'
+</code></pre>
+
+<p>});
+```</p>
+
+<h2>Adding Rule Sets At Runtime</h2>
+
+<p>You can add additional rule sets to your model via the following code.</p>
+
+<p><code>javascript
+ruleEngine.addRuleSet('firstName', { nameNotTom: true });
+</code></p>
+
+<p>This is extremely handy if you make use of the onlyIf clause in knockout.validation that depends on other model data.  You can add these rules later and not have to inject your model into your rule definitions and keep the them clean.</p>
+
+<p>``` javascript</p>
+
+<p>var model = {</p>
+
+<pre><code>firstName: ko.observable('');
+foo: ko.observable('');
+</code></pre>
+
+<p>}</p>
+
+<p>//do other work</p>
+
+<p>ruleEngine.addRuleSet(&lsquo;firstName&rsquo;, {</p>
+
+<pre><code>nameNotTom: true,
+onlyIf: function(){
+    return model.foo() === 'bar';
+}
+</code></pre>
+
+<p>});
+```</p>
+
+<h2>Using The Filter Extender</h2>
+
+<p>It is pretty common that you must also filter the input of data on the knockout model via a form.  This is an example filter extender that can be used in conjunction with the rules definitions as in the above example.</p>
+
+<p>``` javascript
+ko.extenders.filter = function (target, filter) {</p>
+
+<pre><code>var writeFilter = function (newValue) {
+    var newValueAdjusted = (typeof filter === 'function') ? filter(newValue) : newValue;
+    if ($.isArray(filter)) {
+        $.each(filter, function (o) {
+            if (typeof o === 'function') {
+                newValueAdjusted = o(newValueAdjusted);
+            }
+        });
+    }
+    var currentValue = target();
+    if (newValueAdjusted !== currentValue) {
+        target(newValueAdjusted);
+    } else {
+        if (newValue !== currentValue) {
+            target.notifySubscribers(newValueAdjusted);
+        }
+    }
+};
+
+var result = ko.computed({
+    read: target,
+    write: writeFilter
+}).extend({ notify: 'always', throttle: 1 });
+
+result(target());
+
+target.subscribe(writeFilter);
+
+return target;
+</code></pre>
+
+<p>};
+```</p>
+
+<p>Global filters can be setup to be reused via something similar to the following.  See <a href="https://github.com/ctoestreich/knockout-validation-rule-engine/blob/master/app/js/filters/filters.js" title="Knockout Validation Rule Engine Filters">Filters</a> for more information.</p>
+
+<p>``` javascript
+define(function () {</p>
+
+<pre><code>return {
+    ltrim: function (value) {
+        return (typeof value === 'string') ? value.replace(/^\s+/, "") : value;
+    },
+
+    onlyDigits: function (value) {
+        return (typeof value === 'string') ? value.replace(/[^0-9]/g, '') : value;
+    },
+
+    onlyAlpha: function (value) {
+        return (typeof value === 'string') ? value.replace(/[^A-Za-z _\-']/g, '') : value;
+    },
+
+    noSpecialChars: function (value) {
+        return (typeof value === 'string') ? value.replace(/[^\/A-Za-z0-9 '\.,#\-]*$/g, '') : value;
+    }
+};
+</code></pre>
+
+<p>});
+```</p>
+
+<h2>Without RequireJS</h2>
+
+<p>You can still include the plugin without require js.  The plugin adds a global ko.RuleEngine singleton that you can instantiate.  This is done in the <a href="https://github.com/ctoestreich/knockout-validation-rule-engine/blob/master/test/inline.html" title="Knockout Validation Rule Engine Tests">Inline Tests</a>.</p>
+
+<p>``` html</p>
+
+<script src="../app/js/knockout-rule-engine.js"></script>
+
+
+<script>
+    var ruleSet = {firstName: {required: true, validName: true, filter: function(){}}};
+    var ruleEngine = new ko.RuleEngine(ruleSet);
+    ...
+</script>
+
+
+<p>```</p>
+]]></content>
+  </entry>
+  
+</feed>

@@ -1,0 +1,1226 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Testing Domain Constraints Using Grails 2.x & Spock 0.7 - Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="We were migrating some existing Java code to Grails 2.0 and we were looking
+for a good solution to test domain constraints as we were migrating from &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/2012/11/domain-constraints-grails-spock-updated/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Testing Domain Constraints Using Grails 2.x & Spock 0.7</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-10T10:00:00+00:00" pubdate data-updated="true">Nov 10<span>th</span>, 2012</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>We were migrating some existing Java code to Grails 2.0 and we were looking
+for a good solution to test domain constraints as we were migrating from an
+existing schema. We already use and love Spock for most of our testing needs.
+We came up with a relatively easy and reusable solution for testing
+constraints that I wanted to share. As we make improvements or changes I will
+update the post.</p>
+
+<p><em>Update</em> I have updated the project and samples to work with Grails 2.1.1 and Spock 0.7.</p>
+
+<p>All files for this demonstration can be found at my <a href="https://github.com/ctoestreich/grails-spock-constraints">grails-spock-constraints</a> GitHub repository.</p>
+
+<!-- more -->
+
+
+<h3>Setting Up A Domain Object</h3>
+
+<p>I set up an arbitrary Person object with some constraints defined on it that
+will help demonstrate how to test a wide variety of constraints using spock.
+The latest <a href="https://github.com/ctoestreich/grails-spock-constraints/blob/master/grails-app/domain/com/tgid/data/Person.groovy">Person</a> class can be found on github, but here the file at the
+time I published this post.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kd">class</span> <span class="nc">Person</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">static</span> <span class="n">hasMany</span> <span class="o">=</span> <span class="o">[</span><span class="nl">children:</span> <span class="n">Person</span><span class="o">]</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">firstName</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">middleName</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">lastName</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">email</span>
+</span><span class='line'>    <span class="n">Integer</span> <span class="n">age</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">ssn</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">amex</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">gender</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">login</span>
+</span><span class='line'>    <span class="n">Date</span> <span class="n">birthDate</span>
+</span><span class='line'>    <span class="n">Float</span> <span class="n">wage</span>
+</span><span class='line'>    <span class="n">Integer</span> <span class="n">fingers</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">homePage</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">username</span>
+</span><span class='line'>    <span class="kd">static</span> <span class="n">constraints</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">firstName</span> <span class="nl">size:</span> <span class="mi">1</span><span class="o">..</span><span class="mi">50</span>
+</span><span class='line'>        <span class="n">middleName</span> <span class="nl">size:</span> <span class="mi">0</span><span class="o">..</span><span class="mi">50</span>
+</span><span class='line'>        <span class="n">lastName</span> <span class="nl">size:</span> <span class="mi">1</span><span class="o">..</span><span class="mi">50</span>
+</span><span class='line'>        <span class="n">email</span> <span class="nl">email:</span> <span class="kc">true</span><span class="o">,</span> <span class="nl">notEqual:</span> <span class="s2">&quot;bill@microsoft.com&quot;</span>
+</span><span class='line'>        <span class="n">age</span> <span class="nl">nullable:</span> <span class="kc">false</span><span class="o">,</span> <span class="nl">range:</span> <span class="mi">0</span><span class="o">..</span><span class="mi">150</span>
+</span><span class='line'>        <span class="n">ssn</span> <span class="nl">unique:</span> <span class="kc">true</span><span class="o">,</span> <span class="nl">blank:</span> <span class="kc">false</span>
+</span><span class='line'>        <span class="n">amex</span> <span class="nl">creditCard:</span> <span class="kc">true</span>
+</span><span class='line'>        <span class="n">gender</span> <span class="nl">inList:</span> <span class="o">[</span><span class="s2">&quot;Male&quot;</span><span class="o">,</span> <span class="s2">&quot;Female&quot;</span><span class="o">]</span>
+</span><span class='line'>        <span class="n">login</span> <span class="nl">matches:</span> <span class="s2">&quot;[a-zA-Z]+&quot;</span>
+</span><span class='line'>        <span class="n">birthDate</span> <span class="nl">max:</span> <span class="k">new</span> <span class="n">Date</span><span class="o">()</span>
+</span><span class='line'>        <span class="n">wage</span> <span class="nl">min:</span> <span class="mi">0</span><span class="n">F</span><span class="o">,</span> <span class="nl">scale:</span> <span class="mi">2</span>
+</span><span class='line'>        <span class="n">children</span> <span class="nl">maxSize:</span> <span class="mi">10</span><span class="o">,</span> <span class="nl">minSize:</span> <span class="mi">2</span>
+</span><span class='line'>        <span class="n">fingers</span> <span class="nl">nullable:</span> <span class="kc">true</span>
+</span><span class='line'>        <span class="n">homePage</span> <span class="nl">url:</span> <span class="kc">true</span>
+</span><span class='line'>        <span class="n">username</span> <span class="nl">validator:</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">if</span><span class="o">(!</span><span class="n">it</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s1">&#39;boba&#39;</span><span class="o">))</span> <span class="k">return</span> <span class="o">[</span><span class="s1">&#39;invalid.bountyhunter&#39;</span><span class="o">]</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you can see there are variety of constraints defined for this object. Some
+of these might be nonsensical, but I wanted to demonstrate testing a wide
+variety of scenarios. To get the invalid.bountyhunter message working I simply
+added the following to the bottom of my message.properties file:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">person</span><span class="o">.</span><span class="na">username</span><span class="o">.</span><span class="na">invalid</span><span class="o">.</span><span class="na">bountyhunter</span><span class="o">=</span><span class="n">Invalid</span> <span class="n">bounty</span> <span class="n">hunter</span> <span class="o">({</span><span class="mi">2</span><span class="o">})</span> <span class="n">tried</span> <span class="n">to</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>log in.</p>
+
+<h3>Grails Constraints</h3>
+
+<p>The following are a list of available constraints to define on your domain
+classes.</p>
+
+<ul>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/attributes.html">attributes</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/blank.html">blank</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/creditCard.html">creditCard</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/email.html">email</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/inList.html">inList</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/matches.html">matches</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/max.html">max</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/maxSize.html">maxSize</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/min.html">min</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/minSize.html">minSize</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/notEqual.html">notEqual</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/nullable.html">nullable</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/range.html">range</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/scale.html">scale</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/blank.html">size</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/unique.html">unique</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/url.html">url</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/validator.html">validator</a></li>
+<li><a href="http://grails.org/doc/2.0.x/ref/Constraints/widget.html">widget</a></li>
+</ul>
+
+
+<p>I will let the reader check the documentation for the specifics of each
+constraint, but I do want to mention a few Gotchas that I ran into:</p>
+
+<h4>Gottchas</h4>
+
+<ul>
+<li>Setting an inList constraint will not throw an error when passing a blank
+&lsquo;&rsquo; string. I had assumed that using inList: [&lsquo;one&rsquo;,&lsquo;two&rsquo;] would require the
+value to be not null and a valid value in list. <strong>Not True</strong></li>
+<li>Setting a field as url type will allow blank and null values are valid
+urls unless you explicitly define blank or nullable as a constraint. (This
+seems to be fixed to not allow null by default in final 2.0.0)</li>
+<li>Setting column length for String type should be done using <em>field: size
+0..50</em> for a string that can be empty to 50 length. And would be set to
+<em>field: size: 1..100</em> for a field that can not be empty and has a max length
+of 100. MaxSize and minSize are NOT valid for this.</li>
+</ul>
+
+
+<p>I will add to that list as I run across items that are unexpected.</p>
+
+<h3>Spock Basics</h3>
+
+<p>If you aren&rsquo;t familiar with <a href="http://code.google.com/p/spock/">Spock</a> and it&rsquo;s feature set, read up on it
+and start using it. It brings very rich and powerful tooling to testing your
+Grails application. The important pieces to be familiar with for these tests
+are the use of the <a href="http://code.google.com/p/spock/wiki/Parameterizations">where clause, parameterizations and the @Unroll
+features</a>.</p>
+
+<p>It is due to some Spock magic that these tests are able to do so much with
+such little code. You will see the line in the tests like the one below of:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kt">def</span> <span class="n">obj</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s2">&quot;$field&quot;</span><span class="o">:</span> <span class="n">val</span><span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Spock will replace both the <em>field</em> and <em>val</em> with data from the configured
+<em>where</em> table. I had to put the field in quotes and treat it as a gstring so
+Spock would replace that correctly as simply using the new Person(field: val)
+would correctly replace the val, but treat the field as an actual object
+property named field instead of being replaced with a valid field name from
+the <em>where</em> table.</p>
+
+<h3>Other Possible Techniques</h3>
+
+<p>We also really like the <a href="http://www.grails.org/plugin/build-test-data">build test data plugin</a> and started off writing
+these as integration tests with buildWithoutSave giving us fully hydrated live
+domain objects and simply changing the fields we wanted to invalidate. But
+with Grails&#8217; ability to mock for constraints in unit tests we can run these
+tests even faster and earlier in the test cycle if we use unit tests instead.
+This is import to us as we can run the test-app -unit in a few seconds during
+development. Our machines are not the fastest and running -integration takes
+several tens of seconds to run.</p>
+
+<p>Having the objects built with the <a href="http://www.grails.org/plugin/build-test-data">build test data plugin</a> is another good
+option that some people may opt for since you can mix a richer set of tests
+together since you are in a headless app during integration. I will leave that
+decision up the readers which method they prefer.</p>
+
+<h3>Testing Constraints</h3>
+
+<p>I first created a simple abstract helper class that can build some of our data
+for us with reusable methods. This class also holds the function that checks
+for the error message to exist on a field after the validate is called. It is
+called ConstraintUnitSpec.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kn">import</span> <span class="nn">spock.lang.Specification</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">ConstraintUnitSpec</span> <span class="kd">extends</span> <span class="n">Specification</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">String</span> <span class="nf">getLongString</span><span class="o">(</span><span class="n">Integer</span> <span class="n">length</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>       <span class="s1">&#39;a&#39;</span> <span class="o">*</span> <span class="n">length</span>
+</span><span class='line'>   <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="n">String</span> <span class="nf">getEmail</span><span class="o">(</span><span class="n">Boolean</span> <span class="n">valid</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>       <span class="n">valid</span> <span class="o">?</span> <span class="s2">&quot;dexter@miamipd.gov&quot;</span> <span class="o">:</span> <span class="s2">&quot;dexterm@m&quot;</span>
+</span><span class='line'>   <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="n">String</span> <span class="nf">getUrl</span><span class="o">(</span><span class="n">Boolean</span> <span class="n">valid</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>       <span class="n">valid</span> <span class="o">?</span> <span class="s2">&quot;http://www.google.com&quot;</span> <span class="o">:</span> <span class="s2">&quot;http:/ww.helloworld.com&quot;</span>
+</span><span class='line'>   <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="n">String</span> <span class="nf">getCreditCard</span><span class="o">(</span><span class="n">Boolean</span> <span class="n">valid</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>       <span class="n">valid</span> <span class="o">?</span> <span class="s2">&quot;4111111111111111&quot;</span> <span class="o">:</span> <span class="s2">&quot;41014&quot;</span>
+</span><span class='line'>   <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="kt">void</span> <span class="nf">validateConstraints</span><span class="o">(</span><span class="n">obj</span><span class="o">,</span> <span class="n">field</span><span class="o">,</span> <span class="n">error</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>       <span class="kt">def</span> <span class="n">validated</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="na">validate</span><span class="o">()</span>
+</span><span class='line'>       <span class="k">if</span> <span class="o">(</span><span class="n">error</span> <span class="o">&amp;&amp;</span> <span class="n">error</span> <span class="o">!=</span> <span class="s1">&#39;valid&#39;</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>           <span class="k">assert</span> <span class="o">!</span><span class="n">validated</span>
+</span><span class='line'>           <span class="k">assert</span> <span class="n">obj</span><span class="o">.</span><span class="na">errors</span><span class="o">[</span><span class="n">field</span><span class="o">]</span>
+</span><span class='line'>           <span class="k">assert</span> <span class="n">error</span> <span class="o">==</span> <span class="n">obj</span><span class="o">.</span><span class="na">errors</span><span class="o">[</span><span class="n">field</span><span class="o">]</span>
+</span><span class='line'>       <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>           <span class="k">assert</span> <span class="o">!</span><span class="n">obj</span><span class="o">.</span><span class="na">errors</span><span class="o">[</span><span class="n">field</span><span class="o">]</span>
+</span><span class='line'>       <span class="o">}</span>
+</span><span class='line'>   <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We then create our constraint tests and extend this class. We also use the
+<a href="http://grails.org/doc/2.0.x/guide/testing.html#unitTesting">new Grails 2.0 @TestFor annotation</a> to inject some test helper methods
+such as mockForConstraintsTests since we are in the unit test phase.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="nd">@TestFor</span><span class="o">(</span><span class="n">Person</span><span class="o">)</span>
+</span><span class='line'><span class="kd">class</span> <span class="nc">PersonSpec</span> <span class="kd">extends</span> <span class="n">ConstraintUnitSpec</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We want to set up the test and tell Grails that we are mocking the person
+object so it will add the validate method and we can also add an existing
+person to test unique constraints against. We do this by adding the following.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="nd">@TestFor</span><span class="o">(</span><span class="n">Person</span><span class="o">)</span>
+</span><span class='line'><span class="kd">class</span> <span class="nc">PersonSpec</span> <span class="kd">extends</span> <span class="n">ConstraintUnitSpec</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kt">def</span> <span class="nf">setup</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">//mock a person with some data (put unique violations in here so they can be tested, the others aren&#39;t needed)</span>
+</span><span class='line'>        <span class="n">mockForConstraintsTests</span><span class="o">(</span><span class="n">Person</span><span class="o">,</span> <span class="o">[</span><span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="nl">ssn:</span> <span class="s1">&#39;123456789&#39;</span><span class="o">)])</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After this is done we can start adding some test blocks. The first test I
+always add is the test for the standard constraint bounds. This will help with
+any refactoring that you you do later to change field definitions such as
+changing the size/length of a string. If you had size: 1..50 and your test
+checks for 0 and 51 and then change the field constraint to size: 0..50, this
+will cause your test to now fail and hopefully save you some headaches later
+so you can double check your new change against the domain model and data.
+Here is the comprehensive test for the Person class.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="nd">@Unroll</span><span class="o">(</span><span class="s2">&quot;test person all constraints #field is #error&quot;</span><span class="o">)</span>
+</span><span class='line'><span class="kt">def</span> <span class="s2">&quot;test person all constraints&quot;</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="nl">when:</span>
+</span><span class='line'>    <span class="kt">def</span> <span class="n">obj</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s2">&quot;$field&quot;</span><span class="o">:</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nl">then:</span>
+</span><span class='line'>    <span class="n">validateConstraints</span><span class="o">(</span><span class="n">obj</span><span class="o">,</span> <span class="n">field</span><span class="o">,</span> <span class="n">error</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nl">where:</span>
+</span><span class='line'>    <span class="n">error</span>                  <span class="o">|</span> <span class="n">field</span>        <span class="o">|</span> <span class="n">val</span>
+</span><span class='line'>    <span class="s1">&#39;size&#39;</span>                 <span class="o">|</span> <span class="s1">&#39;firstName&#39;</span>  <span class="o">|</span> <span class="n">getLongString</span><span class="o">(</span><span class="mi">51</span><span class="o">)</span>
+</span><span class='line'>    <span class="s1">&#39;nullable&#39;</span>             <span class="o">|</span> <span class="s1">&#39;firstName&#39;</span>  <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="s1">&#39;size&#39;</span>                 <span class="o">|</span> <span class="s1">&#39;middleName&#39;</span> <span class="o">|</span> <span class="n">getLongString</span><span class="o">(</span><span class="mi">51</span><span class="o">)</span>
+</span><span class='line'>    <span class="s1">&#39;nullable&#39;</span>             <span class="o">|</span> <span class="s1">&#39;middleName&#39;</span> <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="s1">&#39;size&#39;</span>                 <span class="o">|</span> <span class="s1">&#39;lastName&#39;</span>   <span class="o">|</span> <span class="n">getLongString</span><span class="o">(</span><span class="mi">51</span><span class="o">)</span>
+</span><span class='line'>    <span class="s1">&#39;nullable&#39;</span>             <span class="o">|</span> <span class="s1">&#39;lastName&#39;</span>   <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="s1">&#39;notEqual&#39;</span>             <span class="o">|</span> <span class="s1">&#39;email&#39;</span>      <span class="o">|</span> <span class="s1">&#39;bill@microsoft.com&#39;</span>
+</span><span class='line'>    <span class="s1">&#39;email&#39;</span>                <span class="o">|</span> <span class="s1">&#39;email&#39;</span>      <span class="o">|</span> <span class="n">getEmail</span><span class="o">(</span><span class="kc">false</span><span class="o">)</span>
+</span><span class='line'>    <span class="s1">&#39;range&#39;</span>                <span class="o">|</span> <span class="s1">&#39;age&#39;</span>        <span class="o">|</span> <span class="mi">151</span>
+</span><span class='line'>    <span class="s1">&#39;range&#39;</span>                <span class="o">|</span> <span class="s1">&#39;age&#39;</span>        <span class="o">|</span> <span class="o">-</span><span class="mi">1</span>
+</span><span class='line'>    <span class="s1">&#39;nullable&#39;</span>             <span class="o">|</span> <span class="s1">&#39;age&#39;</span>        <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="s1">&#39;blank&#39;</span>                <span class="o">|</span> <span class="s1">&#39;ssn&#39;</span>        <span class="o">|</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'>    <span class="s1">&#39;unique&#39;</span>               <span class="o">|</span> <span class="s1">&#39;ssn&#39;</span>        <span class="o">|</span> <span class="s1">&#39;123456789&#39;</span>
+</span><span class='line'>    <span class="s1">&#39;creditCard&#39;</span>           <span class="o">|</span> <span class="s1">&#39;amex&#39;</span>       <span class="o">|</span> <span class="n">getCreditCard</span><span class="o">(</span><span class="kc">false</span><span class="o">)</span>
+</span><span class='line'>    <span class="s1">&#39;inList&#39;</span>               <span class="o">|</span> <span class="s1">&#39;gender&#39;</span>     <span class="o">|</span> <span class="s1">&#39;Unknown&#39;</span>
+</span><span class='line'>    <span class="s1">&#39;matches&#39;</span>              <span class="o">|</span> <span class="s1">&#39;login&#39;</span>      <span class="o">|</span> <span class="s1">&#39;ABC123&#39;</span>
+</span><span class='line'>    <span class="s1">&#39;max&#39;</span>                  <span class="o">|</span> <span class="s1">&#39;birthDate&#39;</span>  <span class="o">|</span> <span class="k">new</span> <span class="n">Date</span><span class="o">()</span> <span class="o">+</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="s1">&#39;min&#39;</span>                  <span class="o">|</span> <span class="s1">&#39;wage&#39;</span>       <span class="o">|</span> <span class="o">-</span><span class="mi">1</span><span class="n">F</span>
+</span><span class='line'>    <span class="s1">&#39;maxSize&#39;</span>              <span class="o">|</span> <span class="s1">&#39;children&#39;</span>   <span class="o">|</span> <span class="n">createPerson</span><span class="o">(</span><span class="mi">11</span><span class="o">)</span>
+</span><span class='line'>    <span class="s1">&#39;minSize&#39;</span>              <span class="o">|</span> <span class="s1">&#39;children&#39;</span>   <span class="o">|</span> <span class="n">createPerson</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+</span><span class='line'>    <span class="s1">&#39;url&#39;</span>                  <span class="o">|</span> <span class="s1">&#39;homePage&#39;</span>   <span class="o">|</span> <span class="n">getUrl</span><span class="o">(</span><span class="kc">false</span><span class="o">)</span>
+</span><span class='line'>    <span class="s1">&#39;invalid.bountyhunter&#39;</span> <span class="o">|</span> <span class="s1">&#39;username&#39;</span>   <span class="o">|</span> <span class="s1">&#39;buba&#39;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Using Spock, these tests become very concise and easy to read in the where
+clause. I set it up so that the <em>field</em> when using <em>val</em> will cause the
+<em>error</em> constraint to be violated.</p>
+
+<p>One of the reasons we like this method to test constraints is other constraint
+tests simply test for errors to exist on a field, but not the specific type of
+constraint violation. While the test for general field errors is still valid,
+it isn&rsquo;t quite as fine grained as checking the actual type of constraint
+violation expected. An example of a generic constraint testing can be found in
+a couple places, but OPI published <a href="http://www.objectpartners.com/2011/02/10/grails-testing-domain-constraints/">an article here</a> on this style of
+constraint testing. This is a good starting point if you don&rsquo;t need as fine
+grained control as I offer here.</p>
+
+<p>As a side note, every time the test checks for a constraint violation there
+will be many fields violated, but we only care about and check for one
+specific field and constraint to be violated for each row in the where table
+as a time. It might be possible to mix multiple checks together, but we like
+testing each scenario and constraint individually.</p>
+
+<h3>Adding Valid Tests</h3>
+
+<p>We can also add additional tests that check for valid values. I added some
+logic in the validateConstraints method that will expect the field to pass
+validation if you use the value in the error column of &lsquo;valid&rsquo; or just a null.
+Using the actual word &lsquo;valid&rsquo; instead of null will help the test names be more
+concise when Spock unrolls them. In the following age tests we are checking
+for both failure and valid criteria. Since age is defined as:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">age</span> <span class="nl">nullable:</span> <span class="kc">false</span><span class="o">,</span> <span class="nl">range:</span> <span class="mi">0</span><span class="o">..</span><span class="mi">150</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We will be checking for values that fall at the limits, outside and inside the
+range as well as passing a null value.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="nd">@Unroll</span><span class="o">(</span><span class="s2">&quot;person #field is #error using #val&quot;</span><span class="o">)</span>
+</span><span class='line'><span class="kt">def</span> <span class="s2">&quot;test person age constraints&quot;</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="nl">when:</span>
+</span><span class='line'>    <span class="kt">def</span> <span class="n">obj</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s2">&quot;$field&quot;</span><span class="o">:</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nl">then:</span>
+</span><span class='line'>    <span class="n">validateConstraints</span><span class="o">(</span><span class="n">obj</span><span class="o">,</span> <span class="n">field</span><span class="o">,</span> <span class="n">error</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nl">where:</span>
+</span><span class='line'>    <span class="n">error</span>      <span class="o">|</span> <span class="n">field</span> <span class="o">|</span> <span class="n">val</span>
+</span><span class='line'>    <span class="s1">&#39;range&#39;</span>    <span class="o">|</span> <span class="s1">&#39;age&#39;</span> <span class="o">|</span> <span class="mi">151</span>
+</span><span class='line'>    <span class="s1">&#39;range&#39;</span>    <span class="o">|</span> <span class="s1">&#39;age&#39;</span> <span class="o">|</span> <span class="o">-</span><span class="mi">1</span>
+</span><span class='line'>    <span class="s1">&#39;nullable&#39;</span> <span class="o">|</span> <span class="s1">&#39;age&#39;</span> <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;age&#39;</span> <span class="o">|</span> <span class="mi">100</span>
+</span><span class='line'>    <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;age&#39;</span> <span class="o">|</span> <span class="mi">150</span>
+</span><span class='line'>    <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;age&#39;</span> <span class="o">|</span> <span class="mi">0</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here is the full PersonSpec</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+<span class='line-number'>127</span>
+<span class='line-number'>128</span>
+<span class='line-number'>129</span>
+<span class='line-number'>130</span>
+<span class='line-number'>131</span>
+<span class='line-number'>132</span>
+<span class='line-number'>133</span>
+<span class='line-number'>134</span>
+<span class='line-number'>135</span>
+<span class='line-number'>136</span>
+<span class='line-number'>137</span>
+<span class='line-number'>138</span>
+<span class='line-number'>139</span>
+<span class='line-number'>140</span>
+<span class='line-number'>141</span>
+<span class='line-number'>142</span>
+<span class='line-number'>143</span>
+<span class='line-number'>144</span>
+<span class='line-number'>145</span>
+<span class='line-number'>146</span>
+<span class='line-number'>147</span>
+<span class='line-number'>148</span>
+<span class='line-number'>149</span>
+<span class='line-number'>150</span>
+<span class='line-number'>151</span>
+<span class='line-number'>152</span>
+<span class='line-number'>153</span>
+<span class='line-number'>154</span>
+<span class='line-number'>155</span>
+<span class='line-number'>156</span>
+<span class='line-number'>157</span>
+<span class='line-number'>158</span>
+<span class='line-number'>159</span>
+<span class='line-number'>160</span>
+<span class='line-number'>161</span>
+<span class='line-number'>162</span>
+<span class='line-number'>163</span>
+<span class='line-number'>164</span>
+<span class='line-number'>165</span>
+<span class='line-number'>166</span>
+<span class='line-number'>167</span>
+<span class='line-number'>168</span>
+<span class='line-number'>169</span>
+<span class='line-number'>170</span>
+<span class='line-number'>171</span>
+<span class='line-number'>172</span>
+<span class='line-number'>173</span>
+<span class='line-number'>174</span>
+<span class='line-number'>175</span>
+<span class='line-number'>176</span>
+<span class='line-number'>177</span>
+<span class='line-number'>178</span>
+<span class='line-number'>179</span>
+<span class='line-number'>180</span>
+<span class='line-number'>181</span>
+<span class='line-number'>182</span>
+<span class='line-number'>183</span>
+<span class='line-number'>184</span>
+<span class='line-number'>185</span>
+<span class='line-number'>186</span>
+<span class='line-number'>187</span>
+<span class='line-number'>188</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'>   <span class="kn">import</span> <span class="nn">grails.test.mixin.TestFor</span>
+</span><span class='line'>   <span class="kn">import</span> <span class="nn">spock.lang.Unroll</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="nd">@TestFor</span><span class="o">(</span><span class="n">Person</span><span class="o">)</span>
+</span><span class='line'>   <span class="kd">class</span> <span class="nc">PersonSpec</span> <span class="kd">extends</span> <span class="n">ConstraintUnitSpec</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="kt">def</span> <span class="nf">setup</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>           <span class="c1">//mock a person with some data (put unique violations in here so they can be tested, the others aren&#39;t needed)</span>
+</span><span class='line'>           <span class="n">mockForConstraintsTests</span><span class="o">(</span><span class="n">Person</span><span class="o">,</span> <span class="o">[</span><span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="nl">ssn:</span> <span class="s1">&#39;123456789&#39;</span><span class="o">)])</span>
+</span><span class='line'>       <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="nd">@Unroll</span><span class="o">(</span><span class="s2">&quot;test person all constraints #field is #error&quot;</span><span class="o">)</span>
+</span><span class='line'>       <span class="kt">def</span> <span class="s2">&quot;test person all constraints&quot;</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>           <span class="nl">when:</span>
+</span><span class='line'>           <span class="kt">def</span> <span class="n">obj</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s2">&quot;$field&quot;</span><span class="o">:</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">then:</span>
+</span><span class='line'>           <span class="n">validateConstraints</span><span class="o">(</span><span class="n">obj</span><span class="o">,</span> <span class="n">field</span><span class="o">,</span> <span class="n">error</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">where:</span>
+</span><span class='line'>           <span class="n">error</span>                  <span class="o">|</span> <span class="n">field</span>        <span class="o">|</span> <span class="n">val</span>
+</span><span class='line'>           <span class="s1">&#39;size&#39;</span>                 <span class="o">|</span> <span class="s1">&#39;firstName&#39;</span>  <span class="o">|</span> <span class="n">getLongString</span><span class="o">(</span><span class="mi">51</span><span class="o">)</span>
+</span><span class='line'>           <span class="s1">&#39;nullable&#39;</span>             <span class="o">|</span> <span class="s1">&#39;firstName&#39;</span>  <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>           <span class="s1">&#39;size&#39;</span>                 <span class="o">|</span> <span class="s1">&#39;middleName&#39;</span> <span class="o">|</span> <span class="n">getLongString</span><span class="o">(</span><span class="mi">51</span><span class="o">)</span>
+</span><span class='line'>           <span class="s1">&#39;nullable&#39;</span>             <span class="o">|</span> <span class="s1">&#39;middleName&#39;</span> <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>           <span class="s1">&#39;size&#39;</span>                 <span class="o">|</span> <span class="s1">&#39;lastName&#39;</span>   <span class="o">|</span> <span class="n">getLongString</span><span class="o">(</span><span class="mi">51</span><span class="o">)</span>
+</span><span class='line'>           <span class="s1">&#39;nullable&#39;</span>             <span class="o">|</span> <span class="s1">&#39;lastName&#39;</span>   <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>           <span class="s1">&#39;notEqual&#39;</span>             <span class="o">|</span> <span class="s1">&#39;email&#39;</span>      <span class="o">|</span> <span class="s1">&#39;bill@microsoft.com&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;email&#39;</span>                <span class="o">|</span> <span class="s1">&#39;email&#39;</span>      <span class="o">|</span> <span class="n">getEmail</span><span class="o">(</span><span class="kc">false</span><span class="o">)</span>
+</span><span class='line'>           <span class="s1">&#39;range&#39;</span>                <span class="o">|</span> <span class="s1">&#39;age&#39;</span>        <span class="o">|</span> <span class="mi">151</span>
+</span><span class='line'>           <span class="s1">&#39;range&#39;</span>                <span class="o">|</span> <span class="s1">&#39;age&#39;</span>        <span class="o">|</span> <span class="o">-</span><span class="mi">1</span>
+</span><span class='line'>           <span class="s1">&#39;nullable&#39;</span>             <span class="o">|</span> <span class="s1">&#39;age&#39;</span>        <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>           <span class="s1">&#39;blank&#39;</span>                <span class="o">|</span> <span class="s1">&#39;ssn&#39;</span>        <span class="o">|</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;unique&#39;</span>               <span class="o">|</span> <span class="s1">&#39;ssn&#39;</span>        <span class="o">|</span> <span class="s1">&#39;123456789&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;creditCard&#39;</span>           <span class="o">|</span> <span class="s1">&#39;amex&#39;</span>       <span class="o">|</span> <span class="n">getCreditCard</span><span class="o">(</span><span class="kc">false</span><span class="o">)</span>
+</span><span class='line'>           <span class="s1">&#39;inList&#39;</span>               <span class="o">|</span> <span class="s1">&#39;gender&#39;</span>     <span class="o">|</span> <span class="s1">&#39;Unknown&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;matches&#39;</span>              <span class="o">|</span> <span class="s1">&#39;login&#39;</span>      <span class="o">|</span> <span class="s1">&#39;ABC123&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;max&#39;</span>                  <span class="o">|</span> <span class="s1">&#39;birthDate&#39;</span>  <span class="o">|</span> <span class="k">new</span> <span class="n">Date</span><span class="o">()</span> <span class="o">+</span> <span class="mi">1</span>
+</span><span class='line'>           <span class="s1">&#39;min&#39;</span>                  <span class="o">|</span> <span class="s1">&#39;wage&#39;</span>       <span class="o">|</span> <span class="o">-</span><span class="mi">1</span><span class="n">F</span>
+</span><span class='line'>           <span class="s1">&#39;maxSize&#39;</span>              <span class="o">|</span> <span class="s1">&#39;children&#39;</span>   <span class="o">|</span> <span class="n">createPerson</span><span class="o">(</span><span class="mi">11</span><span class="o">)</span>
+</span><span class='line'>           <span class="s1">&#39;minSize&#39;</span>              <span class="o">|</span> <span class="s1">&#39;children&#39;</span>   <span class="o">|</span> <span class="n">createPerson</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+</span><span class='line'>           <span class="s1">&#39;url&#39;</span>                  <span class="o">|</span> <span class="s1">&#39;homePage&#39;</span>   <span class="o">|</span> <span class="n">getUrl</span><span class="o">(</span><span class="kc">false</span><span class="o">)</span>
+</span><span class='line'>           <span class="s1">&#39;invalid.bountyhunter&#39;</span> <span class="o">|</span> <span class="s1">&#39;username&#39;</span>   <span class="o">|</span> <span class="s1">&#39;buba&#39;</span>
+</span><span class='line'>       <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="nd">@Unroll</span><span class="o">(</span><span class="s2">&quot;person #field is #error using #val&quot;</span><span class="o">)</span>
+</span><span class='line'>       <span class="kt">def</span> <span class="s2">&quot;test person age constraints&quot;</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>           <span class="nl">when:</span>
+</span><span class='line'>           <span class="kt">def</span> <span class="n">obj</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s2">&quot;$field&quot;</span><span class="o">:</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">then:</span>
+</span><span class='line'>           <span class="n">validateConstraints</span><span class="o">(</span><span class="n">obj</span><span class="o">,</span> <span class="n">field</span><span class="o">,</span> <span class="n">error</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">where:</span>
+</span><span class='line'>           <span class="n">error</span>      <span class="o">|</span> <span class="n">field</span> <span class="o">|</span> <span class="n">val</span>
+</span><span class='line'>           <span class="s1">&#39;range&#39;</span>    <span class="o">|</span> <span class="s1">&#39;age&#39;</span> <span class="o">|</span> <span class="mi">151</span>
+</span><span class='line'>           <span class="s1">&#39;range&#39;</span>    <span class="o">|</span> <span class="s1">&#39;age&#39;</span> <span class="o">|</span> <span class="o">-</span><span class="mi">1</span>
+</span><span class='line'>           <span class="s1">&#39;nullable&#39;</span> <span class="o">|</span> <span class="s1">&#39;age&#39;</span> <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;age&#39;</span> <span class="o">|</span> <span class="mi">100</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;age&#39;</span> <span class="o">|</span> <span class="mi">150</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;age&#39;</span> <span class="o">|</span> <span class="mi">0</span>
+</span><span class='line'>       <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="nd">@Unroll</span><span class="o">(</span><span class="s2">&quot;person #field is #error using #val&quot;</span><span class="o">)</span>
+</span><span class='line'>       <span class="kt">def</span> <span class="s2">&quot;test person ssn constraints&quot;</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>           <span class="nl">when:</span>
+</span><span class='line'>           <span class="kt">def</span> <span class="n">obj</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s2">&quot;$field&quot;</span><span class="o">:</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">then:</span>
+</span><span class='line'>           <span class="n">validateConstraints</span><span class="o">(</span><span class="n">obj</span><span class="o">,</span> <span class="n">field</span><span class="o">,</span> <span class="n">error</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">where:</span>
+</span><span class='line'>           <span class="n">error</span>      <span class="o">|</span> <span class="n">field</span> <span class="o">|</span> <span class="n">val</span>
+</span><span class='line'>           <span class="s1">&#39;blank&#39;</span>    <span class="o">|</span> <span class="s1">&#39;ssn&#39;</span> <span class="o">|</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;nullable&#39;</span> <span class="o">|</span> <span class="s1">&#39;ssn&#39;</span> <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>           <span class="s1">&#39;unique&#39;</span>   <span class="o">|</span> <span class="s1">&#39;ssn&#39;</span> <span class="o">|</span> <span class="s1">&#39;123456789&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;ssn&#39;</span> <span class="o">|</span> <span class="s1">&#39;123456788&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;ssn&#39;</span> <span class="o">|</span> <span class="s1">&#39;123-45-6787&#39;</span>
+</span><span class='line'>       <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="nd">@Unroll</span><span class="o">(</span><span class="s2">&quot;person #field is #error using #val&quot;</span><span class="o">)</span>
+</span><span class='line'>       <span class="kt">def</span> <span class="s2">&quot;test person username constraints&quot;</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>           <span class="nl">when:</span>
+</span><span class='line'>           <span class="kt">def</span> <span class="n">obj</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s2">&quot;$field&quot;</span><span class="o">:</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">then:</span>
+</span><span class='line'>           <span class="n">validateConstraints</span><span class="o">(</span><span class="n">obj</span><span class="o">,</span> <span class="n">field</span><span class="o">,</span> <span class="n">error</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">where:</span>
+</span><span class='line'>           <span class="n">error</span>                  <span class="o">|</span> <span class="n">field</span>      <span class="o">|</span> <span class="n">val</span>
+</span><span class='line'>           <span class="s1">&#39;invalid.bountyhunter&#39;</span> <span class="o">|</span> <span class="s1">&#39;username&#39;</span> <span class="o">|</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;nullable&#39;</span>             <span class="o">|</span> <span class="s1">&#39;username&#39;</span> <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>           <span class="s1">&#39;invalid.bountyhunter&#39;</span> <span class="o">|</span> <span class="s1">&#39;username&#39;</span> <span class="o">|</span> <span class="s1">&#39;bubua&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>                <span class="o">|</span> <span class="s1">&#39;username&#39;</span> <span class="o">|</span> <span class="s1">&#39;bobafet&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>                <span class="o">|</span> <span class="s1">&#39;username&#39;</span> <span class="o">|</span> <span class="s1">&#39;bobajunior&#39;</span>
+</span><span class='line'>       <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="nd">@Unroll</span><span class="o">(</span><span class="s2">&quot;person #field is #error using #val&quot;</span><span class="o">)</span>
+</span><span class='line'>       <span class="kt">def</span> <span class="s2">&quot;test person homepage constraints&quot;</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>           <span class="nl">when:</span>
+</span><span class='line'>           <span class="kt">def</span> <span class="n">obj</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s2">&quot;$field&quot;</span><span class="o">:</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">then:</span>
+</span><span class='line'>           <span class="n">validateConstraints</span><span class="o">(</span><span class="n">obj</span><span class="o">,</span> <span class="n">field</span><span class="o">,</span> <span class="n">error</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">where:</span>
+</span><span class='line'>           <span class="n">error</span>      <span class="o">|</span> <span class="n">field</span>      <span class="o">|</span> <span class="n">val</span>
+</span><span class='line'>           <span class="s1">&#39;url&#39;</span>      <span class="o">|</span> <span class="s1">&#39;homePage&#39;</span> <span class="o">|</span> <span class="n">getUrl</span><span class="o">(</span><span class="kc">false</span><span class="o">)</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;homePage&#39;</span> <span class="o">|</span> <span class="s1">&#39;&#39;</span> <span class="c1">//blanks work for url</span>
+</span><span class='line'>           <span class="s1">&#39;nullable&#39;</span> <span class="o">|</span> <span class="s1">&#39;homePage&#39;</span> <span class="o">|</span> <span class="kc">null</span> <span class="c1">//null works for url (2.0.0 not anymore)</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;homePage&#39;</span> <span class="o">|</span> <span class="n">getUrl</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">+</span> <span class="s1">&#39;/page.gsp&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;homePage&#39;</span> <span class="o">|</span> <span class="n">getUrl</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+</span><span class='line'>       <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="nd">@Unroll</span><span class="o">(</span><span class="s2">&quot;person #field is #error using #val&quot;</span><span class="o">)</span>
+</span><span class='line'>       <span class="kt">def</span> <span class="s2">&quot;test person gender constraints&quot;</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>           <span class="nl">when:</span>
+</span><span class='line'>           <span class="kt">def</span> <span class="n">obj</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s2">&quot;$field&quot;</span><span class="o">:</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">then:</span>
+</span><span class='line'>           <span class="n">validateConstraints</span><span class="o">(</span><span class="n">obj</span><span class="o">,</span> <span class="n">field</span><span class="o">,</span> <span class="n">error</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">where:</span>
+</span><span class='line'>           <span class="n">error</span>      <span class="o">|</span> <span class="n">field</span>    <span class="o">|</span> <span class="n">val</span>
+</span><span class='line'>           <span class="s1">&#39;inList&#39;</span>   <span class="o">|</span> <span class="s1">&#39;gender&#39;</span> <span class="o">|</span> <span class="s1">&#39;Unknown&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;nullable&#39;</span> <span class="o">|</span> <span class="s1">&#39;gender&#39;</span> <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;gender&#39;</span> <span class="o">|</span> <span class="s1">&#39;&#39;</span> <span class="c1">//blanks work for inList</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;gender&#39;</span> <span class="o">|</span> <span class="s1">&#39;Male&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;gender&#39;</span> <span class="o">|</span> <span class="s1">&#39;Female&#39;</span>
+</span><span class='line'>       <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="nd">@Unroll</span><span class="o">(</span><span class="s2">&quot;person #field is #error using #val&quot;</span><span class="o">)</span>
+</span><span class='line'>       <span class="kt">def</span> <span class="s2">&quot;test person credit card constraints&quot;</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>           <span class="nl">when:</span>
+</span><span class='line'>           <span class="kt">def</span> <span class="n">obj</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s2">&quot;$field&quot;</span><span class="o">:</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">then:</span>
+</span><span class='line'>           <span class="n">validateConstraints</span><span class="o">(</span><span class="n">obj</span><span class="o">,</span> <span class="n">field</span><span class="o">,</span> <span class="n">error</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">where:</span>
+</span><span class='line'>           <span class="n">error</span>        <span class="o">|</span> <span class="n">field</span>  <span class="o">|</span> <span class="n">val</span>
+</span><span class='line'>           <span class="s1">&#39;creditCard&#39;</span> <span class="o">|</span> <span class="s1">&#39;amex&#39;</span> <span class="o">|</span> <span class="n">getCreditCard</span><span class="o">(</span><span class="kc">false</span><span class="o">)</span>
+</span><span class='line'>           <span class="s1">&#39;nullable&#39;</span>   <span class="o">|</span> <span class="s1">&#39;amex&#39;</span> <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>      <span class="o">|</span> <span class="s1">&#39;amex&#39;</span> <span class="o">|</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>      <span class="o">|</span> <span class="s1">&#39;amex&#39;</span> <span class="o">|</span> <span class="n">getCreditCard</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+</span><span class='line'>       <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="nd">@Unroll</span><span class="o">(</span><span class="s2">&quot;person #field is #error using #val&quot;</span><span class="o">)</span>
+</span><span class='line'>       <span class="kt">def</span> <span class="s2">&quot;test person birth date constraints&quot;</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>           <span class="nl">when:</span>
+</span><span class='line'>           <span class="kt">def</span> <span class="n">obj</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s2">&quot;$field&quot;</span><span class="o">:</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">then:</span>
+</span><span class='line'>           <span class="n">validateConstraints</span><span class="o">(</span><span class="n">obj</span><span class="o">,</span> <span class="n">field</span><span class="o">,</span> <span class="n">error</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">where:</span>
+</span><span class='line'>           <span class="n">error</span>      <span class="o">|</span> <span class="n">field</span>       <span class="o">|</span> <span class="n">val</span>
+</span><span class='line'>           <span class="s1">&#39;max&#39;</span>      <span class="o">|</span> <span class="s1">&#39;birthDate&#39;</span> <span class="o">|</span> <span class="k">new</span> <span class="n">Date</span><span class="o">()</span> <span class="o">+</span> <span class="mi">1</span>
+</span><span class='line'>           <span class="s1">&#39;nullable&#39;</span> <span class="o">|</span> <span class="s1">&#39;birthDate&#39;</span> <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;birthDate&#39;</span> <span class="o">|</span> <span class="k">new</span> <span class="n">Date</span><span class="o">()</span> <span class="o">-</span> <span class="mi">1</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>    <span class="o">|</span> <span class="s1">&#39;birthDate&#39;</span> <span class="o">|</span> <span class="k">new</span> <span class="n">Date</span><span class="o">()</span>
+</span><span class='line'>       <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="nd">@Unroll</span><span class="o">(</span><span class="s2">&quot;person #field testing #error&quot;</span><span class="o">)</span>
+</span><span class='line'>       <span class="kt">def</span> <span class="s2">&quot;test person children constraints&quot;</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>           <span class="nl">when:</span>
+</span><span class='line'>           <span class="kt">def</span> <span class="n">obj</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Person</span><span class="o">(</span><span class="s2">&quot;$field&quot;</span><span class="o">:</span> <span class="n">val</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">then:</span>
+</span><span class='line'>           <span class="n">validateConstraints</span><span class="o">(</span><span class="n">obj</span><span class="o">,</span> <span class="n">field</span><span class="o">,</span> <span class="n">error</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="nl">where:</span>
+</span><span class='line'>           <span class="n">error</span>     <span class="o">|</span> <span class="n">field</span>      <span class="o">|</span> <span class="n">val</span>
+</span><span class='line'>           <span class="s1">&#39;maxSize&#39;</span> <span class="o">|</span> <span class="s1">&#39;children&#39;</span> <span class="o">|</span> <span class="n">createPerson</span><span class="o">(</span><span class="mi">11</span><span class="o">)</span>
+</span><span class='line'>           <span class="s1">&#39;minSize&#39;</span> <span class="o">|</span> <span class="s1">&#39;children&#39;</span> <span class="o">|</span> <span class="n">createPerson</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>   <span class="o">|</span> <span class="s1">&#39;children&#39;</span> <span class="o">|</span> <span class="kc">null</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>   <span class="o">|</span> <span class="s1">&#39;children&#39;</span> <span class="o">|</span> <span class="n">createPerson</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
+</span><span class='line'>           <span class="s1">&#39;valid&#39;</span>   <span class="o">|</span> <span class="s1">&#39;children&#39;</span> <span class="o">|</span> <span class="n">createPerson</span><span class="o">(</span><span class="mi">2</span><span class="o">)</span>
+</span><span class='line'>       <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="kd">private</span> <span class="nf">createPerson</span><span class="o">(</span><span class="n">Integer</span> <span class="n">count</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>           <span class="kt">def</span> <span class="n">persons</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>           <span class="n">count</span><span class="o">.</span><span class="na">times</span> <span class="o">{</span>
+</span><span class='line'>               <span class="n">persons</span> <span class="o">&lt;&lt;</span> <span class="k">new</span> <span class="n">Person</span><span class="o">()</span>
+</span><span class='line'>           <span class="o">}</span>
+</span><span class='line'>           <span class="n">persons</span>
+</span><span class='line'>       <span class="o">}</span>
+</span><span class='line'>   <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Conclusion</h3>
+
+<p>I hope that this can be a useful tool or guideline for you when you are
+creating constraint tests for your domain objects. These tests are a bit
+tedious to write, but using some of the techniques here makes writing them
+pretty quick to create and test.</p>
+
+<p>I would probably never test ALL the constraints like this, but in case you wanted to
+test anything specific and guard against certain non-allowed data then you might want to consider something like this.  This
+would certainly be to your benefit to do for any custom constraints you define on your objects.</p>
+
+<h3>Sample Project</h3>
+
+<p>All files for this demonstration can be found at my <a href="https://github.com/ctoestreich/grails-spock-constraints">grails-spock-
+constraints</a> GitHub repository.</p>
+
+<h3>Getting Grails 2.0 and Spock 0.6 Working (Legacy)</h3>
+
+<p>We had a little bit of trouble getting grails 2.0.0.RC1 and Spock 0.6 to play
+well together, but found some useful information in this <a href="http://jira.grails.org/browse/GPSPOCK-5?focusedCommentId=67107&amp;page=com.atlassian.jira.plugin.system.issuetabpanels%3acomment-tabpanel#comment-67107">jira</a>.
+Add the following to the repositories section of your BuildConfig.groovy</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">mavenRepo</span> <span class="s2">&quot;http://m2repo.spockframework.org/snapshots&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>and the following to the plugins section of your BuildConfig.groovy</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">test</span> <span class="s2">&quot;:spock:0.6-SNAPSHOT&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>These will no doubt change as 2.0 becomes final and the official spock plugin
+is updated.</p>
+
+<h3>References</h3>
+
+<ul>
+<li>Another Spock Constraint Test: <a href="http://meetspock.appspot.com/script/35001">http://meetspock.appspot.com/script/35001</a></li>
+<li>Spock Documentation: <a href="http://code.google.com/p/spock/">http://code.google.com/p/spock/</a></li>
+<li>Generic Constraint Validation: <a href="http://www.objectpartners.com/2011/02/10/grails-testing-domain-constraints/">http://www.objectpartners.com/2011/02/10/grails-testing-domain-constraints/</a></li>
+<li>Grails 2.0 Docs: <a href="http://grails.org/doc/2.0.x/">http://grails.org/doc/2.0.x/</a></li>
+<li>Grails 2.0 Mocking: <a href="http://grails.org/doc/2.0.x/guide/testing.html#mockingCollaborators">http://grails.org/doc/2.0.x/guide/testing.html#mockingCollaborators</a></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">ctoestreich</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-10T10:00:00+00:00" pubdate data-updated="true">Nov 10<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/technology/'>Technology</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://www.christianoestreich.com/2012/11/domain-constraints-grails-spock-updated/" data-via="ctoestreich" data-counturl="http://www.christianoestreich.com/2012/11/domain-constraints-grails-spock-updated/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/2012/10/deloying-grails-2-to-websphere/" title="Previous Post: Grails 2.x Deployed To Websphere 7ish">&laquo; Grails 2.x Deployed To Websphere 7ish</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/2012/11/grails-cxf-plugin-version-one-released/" title="Next Post: Grails CXF Plugin Version 1.x Released">Grails CXF Plugin Version 1.x Released &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.christianoestreich.com/2012/11/domain-constraints-grails-spock-updated/';
+        var disqus_url = 'http://www.christianoestreich.com/2012/11/domain-constraints-grails-spock-updated/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

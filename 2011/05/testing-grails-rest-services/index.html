@@ -1,0 +1,568 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Testing Grails REST Services - Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="Recently I needed to run a simulated load test on some rest services to see
+what the memory footprint would be as I varied my cache size and strategy &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/2011/05/testing-grails-rest-services/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Testing Grails REST Services</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-05-06T09:33:10+00:00" pubdate data-updated="true">May 6<span>th</span>, 2011</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Recently I needed to run a simulated load test on some rest services to see
+what the memory footprint would be as I varied my cache size and strategy.  I
+looked for a good tool to do this and couldn&rsquo;t really find anything that fit
+my need easily.  I liked the SOAP UI test runner, but I couldn&rsquo;t quite get it
+working like I wanted.</p>
+
+<p>I ended up writing a script that I can run from the grails shell to invoke the
+REST service using an xml data file to hold the IDs of the objects I wanted to
+load.   I played around with the idea of just grabbing the items from the DB,
+but I really wanted to minimize the impact on the application during the
+loading so I grabbed all the data from dbvis and exported it into an XML file
+that I slurp in through groovy.</p>
+
+<p>I took the script one step farther and implemented gpars as well to try and
+speed up the load.  There were some issues with the server becoming inundated
+with too many requests so I added a 100ms sleep to every request.  I still
+need to tune that to get the best throughput without causing the server to
+throw exceptions from having unavailable listener threads.</p>
+
+<p><em><strong>Note</strong>: I changed some of the data in these scripts to use dummy names and
+paths as to not violate any corp policies.</em></p>
+
+<p>I created a script and put it under scripts\performance\MyScript.groovy
+(obviously not called MyScript, but you get the point).  By wrapping the
+script in a closure with the .call() at the end, this will run the default
+method when we execute load.  There might be better ways to do this, but I
+found it to work quite nicely.  I would suggest moving the thread size to the
+config file as it would be easier to change on the fly that way without
+recompiling the script.  The grails shell isn&rsquo;t as hot-swap friendly as the
+running grails tomcat/jetty instance.  I had some profiling around the code
+execution, but when I had to add the sleep, I took it out.  I can see cases
+for these scripts where adding it back would be useful.</p>
+
+<p>The script contains the following code.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kn">import</span> <span class="nn">static</span> <span class="n">groovyx</span><span class="o">.</span><span class="na">gpars</span><span class="o">.</span><span class="na">GParsPool</span><span class="o">.</span><span class="na">withPool</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.codehaus.groovy.grails.commons.ConfigurationHolder</span> <span class="k">as</span> <span class="n">CH</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">def</span> <span class="n">blahStressTest</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">path</span> <span class="o">=</span> <span class="n">CH</span><span class="o">.</span><span class="na">config</span><span class="o">.</span><span class="na">dataDir</span> <span class="o">+</span> <span class="n">File</span><span class="o">.</span><span class="na">separator</span> <span class="o">+</span> <span class="s2">&quot;mydata.xml&quot;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">println</span> <span class="s2">&quot;Loading ${path}..&quot;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">def</span> <span class="n">theData</span> <span class="o">=</span> <span class="k">new</span> <span class="n">XmlSlurper</span><span class="o">().</span><span class="na">parseText</span><span class="o">(</span><span class="k">new</span> <span class="n">File</span><span class="o">(</span><span class="n">path</span><span class="o">).</span><span class="na">text</span><span class="o">)</span>
+</span><span class='line'>    <span class="kt">def</span> <span class="n">size</span> <span class="o">=</span> <span class="n">theData</span><span class="o">.</span><span class="na">ROWSET</span><span class="o">.</span><span class="na">ROW</span><span class="o">.</span><span class="na">size</span><span class="o">()</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">withPool</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">medData</span><span class="o">.</span><span class="na">ROWSET</span><span class="o">.</span><span class="na">ROW</span><span class="o">.</span><span class="na">eachWithIndexParallel</span> <span class="o">{</span> <span class="n">object</span><span class="o">,</span> <span class="n">index</span> <span class="o">-&gt;</span>
+</span><span class='line'>                    <span class="k">try</span><span class="o">{</span>
+</span><span class='line'>                            <span class="kt">def</span> <span class="n">url</span> <span class="o">=</span> <span class="k">new</span> <span class="n">URL</span><span class="o">(</span><span class="s2">&quot;${CH.config.grails.serverURL}/resturl/${object}&quot;</span><span class="o">).</span><span class="na">text</span>
+</span><span class='line'>                <span class="k">if</span> <span class="o">(</span><span class="n">index</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span> <span class="n">println</span> <span class="s2">&quot;${Thread.currentThread().name} - ${index} of ${size}&quot;</span>
+</span><span class='line'>                            <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">100</span><span class="o">)</span>
+</span><span class='line'>                    <span class="o">}</span> <span class="k">catch</span><span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">){</span>
+</span><span class='line'>                            <span class="n">println</span> <span class="s2">&quot;exception ${e.message}&quot;</span>
+</span><span class='line'>                    <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">println</span> <span class="s2">&quot;completed&quot;</span>
+</span><span class='line'><span class="o">}.</span><span class="na">call</span><span class="o">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I added the following to the config and put a different path under each
+environment section as the directory structure is a bit different in each. I
+really have no need to run this in prod for now, but I might in the future.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">environments</span> <span class="o">{</span>
+</span><span class='line'>  <span class="n">production</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">grails</span><span class="o">.</span><span class="na">serverURL</span> <span class="o">=</span> <span class="s2">&quot;https://url&quot;</span>
+</span><span class='line'>    <span class="n">logDirectory</span> <span class="o">=</span> <span class="s2">&quot;/unix/path/logs&quot;</span>
+</span><span class='line'>    <span class="n">dataDir</span> <span class="o">=</span> <span class="s2">&quot;/unix/projects/myproject/scripts/performance&quot;</span>
+</span><span class='line'> <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">development</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">grails</span><span class="o">.</span><span class="na">serverURL</span> <span class="o">=</span> <span class="s2">&quot;http://localhost:8080/${appName}&quot;</span>
+</span><span class='line'>    <span class="n">logDirectory</span> <span class="o">=</span> <span class="s2">&quot;/windows/path/log&quot;</span>
+</span><span class='line'>    <span class="n">dataDir</span> <span class="o">=</span> <span class="s2">&quot;c:/projects/myproject/scripts/performance&quot;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">test</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">grails</span><span class="o">.</span><span class="na">serverURL</span> <span class="o">=</span> <span class="s2">&quot;http://testserver:8080/${appName}&quot;</span>
+</span><span class='line'>    <span class="n">logDirectory</span> <span class="o">=</span> <span class="s2">&quot;/unix/path/logs&quot;</span>
+</span><span class='line'>    <span class="n">dataDir</span> <span class="o">=</span> <span class="s2">&quot;/unix/projects/myproject/scripts/performance&quot;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>My xml file is in the same directory as the scripts for now.  It just has some
+data that looks like this (as exported directly from dbvis).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;MyData&gt;</span>
+</span><span class='line'><span class="nt">&lt;ROWDATA&gt;</span>
+</span><span class='line'><span class="nt">&lt;ROW&gt;</span>
+</span><span class='line'><span class="nt">&lt;ID&gt;</span>123<span class="nt">&lt;/ID&gt;</span>
+</span><span class='line'><span class="nt">&lt;/ROW&gt;</span>
+</span><span class='line'><span class="nt">&lt;ROW&gt;</span>
+</span><span class='line'><span class="nt">&lt;ID&gt;</span>1234<span class="nt">&lt;/ID&gt;</span>
+</span><span class='line'><span class="nt">&lt;/ROW&gt;</span>
+</span><span class='line'>...
+</span><span class='line'><span class="nt">&lt;/ROWDATA&gt;</span>
+</span><span class='line'><span class="nt">&lt;/MyData&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I really just wanted to load up all the objects in cache without any object
+misses.  I tried doing a 1..100000 type operation, but the IDs of the data I
+am using are not very sequential and skip around a bit.</p>
+
+<p>I launched the grails shell using (use which ever env you want to run it for):</p>
+
+<pre><code>grails dev shell
+</code></pre>
+
+<p>Once launched I simply type</p>
+
+<pre><code>load scripts\performance\MyScript.groovy
+</code></pre>
+
+<p>This technique could come in handy for testing other types of rest/url actions
+as well.  I originally had created another controller that would use the rest
+plugin&rsquo;s withHttp method to invoke the site, but found that to be a bit clunky
+and I didn&rsquo;t like being forced to use up one of my browser tabs to run the
+script. :)</p>
+
+<p>I used the <a href="http://www.grails.org/plugin/grails-melody" title="Grails Melody Plugin">grails melody plugin</a> to see the cache sizes and memory foot
+print.  Definitely an awesome plugin!</p>
+
+<p>FYI: To configure the spring cache plugin manually you need to add a file
+under the cong\spring folder called resources and add some code like the
+following:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kn">import</span> <span class="nn">grails.plugin.springcache.web.key.WebContentKeyGenerator</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">org.springframework.cache.ehcache.EhCacheFactoryBean</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Place your Spring DSL code here</span>
+</span><span class='line'><span class="n">beans</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>   <span class="n">MyCache</span><span class="o">(</span><span class="n">EhCacheFactoryBean</span><span class="o">)</span> <span class="o">{</span> <span class="n">bean</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="n">cacheManager</span> <span class="o">=</span> <span class="n">ref</span><span class="o">(</span><span class="s2">&quot;springcacheCacheManager&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="n">cacheName</span> <span class="o">=</span> <span class="s2">&quot;MyCache&quot;</span>
+</span><span class='line'>    <span class="n">eternal</span> <span class="o">=</span> <span class="kc">true</span>
+</span><span class='line'>    <span class="n">diskPersistent</span> <span class="o">=</span> <span class="kc">false</span>
+</span><span class='line'>    <span class="n">memoryStoreEvictionPolicy</span> <span class="o">=</span> <span class="s2">&quot;LRU&quot;</span>
+</span><span class='line'>    <span class="n">maxElementsInMemory</span> <span class="o">=</span> <span class="mi">100000</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Anywhere you use the @Cachable(&ldquo;MyCache&rdquo;) it will use this configuration
+instead of the default.</p>
+
+<p>Good Luck.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">ctoestreich</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-05-06T09:33:10+00:00" pubdate data-updated="true">May 6<span>th</span>, 2011</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/technology/'>Technology</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://www.christianoestreich.com/2011/05/testing-grails-rest-services/" data-via="ctoestreich" data-counturl="http://www.christianoestreich.com/2011/05/testing-grails-rest-services/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/2011/05/gmetrics-codenarc-for-grails/" title="Previous Post: Gmetrics & Codenarc Script For Grails">&laquo; Gmetrics & Codenarc Script For Grails</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/2011/05/jquery-memory-leak-frustration/" title="Next Post: jQuery Memory Leak Frustration">jQuery Memory Leak Frustration &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.christianoestreich.com/2011/05/testing-grails-rest-services/';
+        var disqus_url = 'http://www.christianoestreich.com/2011/05/testing-grails-rest-services/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

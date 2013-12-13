@@ -1,0 +1,760 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Mixing Grails, Groovy, Scala & Java - Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="As I have mentioned earlier, I am a huge fan of grails and would love to ditch
+our existing java/spring/custom code framework and move to grails &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/2011/04/mixing-grails-groovy-scala-java/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Mixing Grails, Groovy, Scala & Java</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-04-14T11:59:14+00:00" pubdate data-updated="true">Apr 14<span>th</span>, 2011</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>As I have mentioned earlier, I am a huge fan of grails and would love to ditch
+our existing java/spring/custom code framework and move to grails
+holistically.  A few of our senior people on the team really want to move to
+scala to get rid of a lot of the clutter code we write in our java stacks.  To
+further the grails cause, I decided to see if I could get the <a href="http://grails.org/plugin/scala" title="Grails Scala Plugin">scala
+plugin</a> for grails working and see how deeply I could integrate the scala
+code into the application.  While I was at it I decided that I might as well
+throw in java as well for giggles.  I really like both <a href="http://groovy.codehaus.org/" title="Groovy">groovy</a> and
+<a href="http://www.scala-lang.org/" title="Scala">scala</a>.  Each language has its advantages, but there is a general
+consensus on the team at work that the statically typed scala would be better
+for our inline conversion of existing java code.</p>
+
+<h2>Setting Up The Environment</h2>
+
+<p>All the <a href="https://github.com/ctoestreich/grails-scala" title="Source Code">source code</a> for this can be found at GitHub.  You can pull it
+down via the command:</p>
+
+<pre><code>git clone git@github.com:ctoestreich/grails-scala.git
+</code></pre>
+
+<p>I am assuming you will be using IntelliJ (as it is my favorite IDE).  If you
+are using Eclipse you will be on your own for a lot of the set up pieces.  I
+am also assuming you have grails already setup on your machine correctly.  The
+first thing to do is install the scala plugin for grails via the following
+grails command:</p>
+
+<pre><code>grails install-plugin scala
+</code></pre>
+
+<p>If you are using <a href="http://www.jetbrains.com/idea/" title="IntelliJ IDE">IntelliJ</a>, you should also install the scala plugin for
+IDEA</p>
+
+<p><a href="http://build.christianoestreich.com/wp-content/uploads/2011/04/install_scala_plugin.png"><img src="http://build.christianoestreich.com/wp-content/uploads/2011/04/install_scala_plugin.png" title="Install Scala Plugin" alt="Install Scala Plugin" /></a></p>
+
+<h2>Starting The Coding</h2>
+
+<p>I started the coding and realized that I needed to be conscious about what
+type of objects inherited from what type of interfaces/traits.  I initially
+tried having everything inherit from a Java Interface.  This solution compiled
+and worked okay.  I then moved to trying to get everything to extend a groovy
+interface.  The code exploded.  It was immediately obvious that the scalac
+command was run first and compiling the scala and java sources before groovy.
+Having the java and scala extend a groovy interface wasn&rsquo;t going to work.  In
+the end I decided to go with a scala trait due to its enhanced functionality
+and support in scala and standard java interface usage.  I spent the majority
+of my time fuddling with this compilation order problem and getting the three
+languages to compile nicely together.</p>
+
+<p><a href="http://build.christianoestreich.com/wp-content/uploads/2011/04/save_interface.png"><img src="http://build.christianoestreich.com/wp-content/uploads/2011/04/save_interface.png" title="Save Interface" alt="" /></a></p>
+
+<p>First I defined a scala trait.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">package</span> <span class="nn">com.far.scape.scala</span>
+</span><span class='line'><span class="k">trait</span> <span class="nc">Cast</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">race</span><span class="o">()</span><span class="k">:</span><span class="kt">String</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">actor</span><span class="o">()</span><span class="k">:</span><span class="kt">String</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">save</span><span class="o">()</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then I created the following objects.</p>
+
+<p><strong>Java Object</strong></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">far</span><span class="o">.</span><span class="na">scape</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.far.scape.scala.Cast</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//public class Kadargo implements JavaCast {</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Kadargo</span> <span class="kd">implements</span> <span class="n">Cast</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">String</span> <span class="n">name</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">String</span> <span class="nf">getName</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">name</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">save</span><span class="o">(){</span>
+</span><span class='line'>        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;in java save&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setName</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="o">.</span><span class="na">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">String</span> <span class="nf">race</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;I am Luxan&quot;</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">String</span> <span class="nf">actor</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;Anthony Simcoe&quot;</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>Scala Object</strong></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">package</span> <span class="nn">com.far.scape.scala</span>
+</span><span class='line'><span class="c1">//import com.far.scape.JavaCast</span>
+</span><span class='line'><span class="c1">//class Crichton extends JavaCast  {</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Crichton</span> <span class="k">extends</span> <span class="nc">Cast</span>  <span class="o">{</span>
+</span><span class='line'>  <span class="k">var</span> <span class="n">name</span> <span class="k">=</span> <span class="s">&quot;&quot;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="n">save</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">println</span><span class="o">(</span><span class="s">&quot;in scala save&quot;</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="n">race</span><span class="o">()</span><span class="k">:</span><span class="kt">String</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>    <span class="s">&quot;Frelling Human!&quot;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="k">def</span> <span class="n">actor</span><span class="o">()</span><span class="k">:</span><span class="kt">String</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>    <span class="s">&quot;Ben Browder&quot;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>Groovy Object</strong></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">far</span><span class="o">.</span><span class="na">scape</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.far.scape.scala.Cast</span>
+</span><span class='line'><span class="c1">//class Chiana implements JavaCast {</span>
+</span><span class='line'><span class="kd">class</span> <span class="nc">Chiana</span> <span class="kd">implements</span> <span class="n">Cast</span> <span class="o">{</span>
+</span><span class='line'>  <span class="n">String</span> <span class="n">name</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">String</span> <span class="nf">race</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="s2">&quot;I am Nebari&quot;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">String</span> <span class="nf">actor</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="s2">&quot;Gigi Egdley&quot;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">void</span> <span class="nf">save</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">println</span> <span class="s2">&quot;in groovy save&quot;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>One thing to note is that the directory structure matters.  There is a bug
+with the scala grails plugin at the time I wrote this post with grails 1.3.5+
+and scala plugin 0.5.  I had to go into the scala plugin Events.groovy code
+and comment out the following line:</p>
+
+<p><em><strong>//addScalaToCompileSrcPaths(compileBinding)</strong></em></p>
+
+<p>I found the following note on the now-depreciated plugin page (not sure why this is gone now since the version didn&rsquo;t change).</p>
+
+<p>NOTES: current 0.5 version seems incompatible with <strong>Grails</strong> 1.3 As quick and dirty fix we do the following to the installed script scala-0.5/scripts/Events.groovy:</p>
+
+<pre><code>* comment out //addScalaToCompileSrcPaths(compileBinding)
+* then we have to put scala sources under src/java (src/scala is not usable)
+</code></pre>
+
+<p>I have all my scala code under src/java/com/far/scape/scala.  I decided to put
+it in a dir under the package named scala so it was easier to differentiate.</p>
+
+<p>I created a regular grails service under grails-app/services/[package-
+name]/GrailsService.groovy.  I mocked up a save method on the interface and
+put an implementation in each class.  Ideally I will be able to actually
+persist the objects, but for now I just used save on the interface to see how
+well the trait worked across java, scala and groovy.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">far</span><span class="o">.</span><span class="na">scape</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.far.scape.scala.Cast</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">class</span> <span class="nc">GrailsService</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">static</span> <span class="n">transactional</span> <span class="o">=</span> <span class="kc">true</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">def</span> <span class="nf">saveObject</span><span class="o">(</span><span class="n">Cast</span> <span class="n">cast</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">println</span> <span class="s2">&quot;Grails Service saving object ${cast.class.name}&quot;</span>
+</span><span class='line'>      <span class="n">cast</span><span class="o">.</span><span class="na">save</span><span class="o">()</span>
+</span><span class='line'>      <span class="kc">true</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Testing The Code</h2>
+
+<p>I wrote a really simply integration test to pass all the object types to the
+grails service saveObject method.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">far</span><span class="o">.</span><span class="na">scape</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">grails.test.GrailsUnitTestCase</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.far.scape.scala.Crichton</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">class</span> <span class="nc">GrailsServiceTests</span> <span class="kd">extends</span> <span class="n">GrailsUnitTestCase</span> <span class="o">{</span>
+</span><span class='line'>  <span class="kt">def</span> <span class="n">grailsService</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">setUp</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">setUp</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">tearDown</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">tearDown</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">void</span> <span class="nf">testSaveGroovyObject</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kt">def</span> <span class="n">chiana</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Chiana</span><span class="o">(</span><span class="nl">name:</span> <span class="s2">&quot;Chiana&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="n">assertTrue</span> <span class="n">grailsService</span><span class="o">.</span><span class="na">saveObject</span><span class="o">(</span><span class="n">chiana</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">void</span> <span class="nf">testSaveJavaObject</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kt">def</span> <span class="n">kadargo</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Kadargo</span><span class="o">(</span><span class="nl">name:</span> <span class="s2">&quot;Ka&#39;Dargo&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="n">assertTrue</span> <span class="n">grailsService</span><span class="o">.</span><span class="na">saveObject</span><span class="o">(</span><span class="n">kadargo</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">void</span> <span class="nf">testSaveScalaObject</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kt">def</span> <span class="n">crichton</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Crichton</span><span class="o">(</span><span class="nl">name:</span> <span class="s2">&quot;Crichton&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="n">assertTrue</span> <span class="n">grailsService</span><span class="o">.</span><span class="na">saveObject</span><span class="o">(</span><span class="n">crichton</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To run the integration tests execute the command below.  The -echoOut is to
+show the output from any print statements you have in your tests.</p>
+
+<pre><code>grails test-app -echoOut
+</code></pre>
+
+<p>Here is the result</p>
+
+<p><a href="http://build.christianoestreich.com/wp-content/uploads/2011/04/test_output_save.png"><img src="http://build.christianoestreich.com/wp-content/uploads/2011/04/test_output_save.png" title="Testing Mock Save" alt="Testing Mock Save" /></a></p>
+
+<p>I played around a bit with creating a scala service.  I was able to get it
+working as a standard manually created bean, but didn&rsquo;t get the auto-
+wiring/injection of the scala service working in the integration tests.
+Granted, I didn&rsquo;t try that hard as I wanted to make that a topic of another
+post.</p>
+
+<h2>Client Side Code</h2>
+
+<p>I also added a simple controller and view to test adding different objects to
+gsp page.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kn">package</span> <span class="n">grails</span><span class="o">.</span><span class="na">scala</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.far.scape.Chiana</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.far.scape.scala.Crichton</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.far.scape.Kadargo</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">class</span> <span class="nc">MoyaController</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kt">def</span> <span class="n">index</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>      <span class="kt">def</span> <span class="n">characters</span> <span class="o">=</span> <span class="o">[</span><span class="k">new</span> <span class="n">Chiana</span><span class="o">(),</span> <span class="k">new</span> <span class="n">Kadargo</span><span class="o">(),</span> <span class="k">new</span> <span class="n">Crichton</span><span class="o">()].</span><span class="na">asList</span><span class="o">()</span>
+</span><span class='line'>      <span class="o">[</span><span class="nl">view:</span><span class="s2">&quot;index&quot;</span><span class="o">,</span><span class="s2">&quot;characters&quot;</span><span class="o">:</span><span class="n">characters</span><span class="o">]</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then I created an index.gsp under grails-app/views/moya.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;html&gt;</span>
+</span><span class='line'><span class="nt">&lt;body&gt;</span>
+</span><span class='line'><span class="nt">&lt;g:each</span> <span class="na">in=</span><span class="s">&quot;${characters}&quot;</span> <span class="na">var=</span><span class="s">&quot;character&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>${character.class.name}<span class="nt">&lt;br&gt;</span>
+</span><span class='line'>${character.race()}<span class="nt">&lt;br&gt;</span>
+</span><span class='line'>${character.actor()}<span class="nt">&lt;br&gt;</span>
+</span><span class='line'><span class="nt">&lt;p&gt;&lt;/p&gt;</span>
+</span><span class='line'><span class="nt">&lt;/g:each&gt;</span>
+</span><span class='line'><span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This should render the following:</p>
+
+<p><a href="http://build.christianoestreich.com/wp-content/uploads/2011/04/groovy-scala-view.png"><img src="http://build.christianoestreich.com/wp-content/uploads/2011/04/groovy-scala-view.png" title="Output View" alt="Output View" /></a></p>
+
+<p>All the <a href="https://github.com/ctoestreich/grails-scala" title="Source Code">source code</a> for this can be found at GitHub.</p>
+
+<p>Happy Coding.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">ctoestreich</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-04-14T11:59:14+00:00" pubdate data-updated="true">Apr 14<span>th</span>, 2011</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/technology/'>Technology</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://www.christianoestreich.com/2011/04/mixing-grails-groovy-scala-java/" data-via="ctoestreich" data-counturl="http://www.christianoestreich.com/2011/04/mixing-grails-groovy-scala-java/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/2011/04/tuesday-night-worlds-4122010/" title="Previous Post: Tuesday Night Worlds - 4/12/2010">&laquo; Tuesday Night Worlds - 4/12/2010</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/2011/05/tuesday-night-worlds-4192011/" title="Next Post: Tuesday Night Worlds - 4/19/2011">Tuesday Night Worlds - 4/19/2011 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.christianoestreich.com/2011/04/mixing-grails-groovy-scala-java/';
+        var disqus_url = 'http://www.christianoestreich.com/2011/04/mixing-grails-groovy-scala-java/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

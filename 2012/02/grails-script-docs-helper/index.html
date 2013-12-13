@@ -1,0 +1,564 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Grails Docs Helper Script - Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="I am creating a hello world grails project for internal use here at our company. The project encapsulates both the source code and the documentation &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/2012/02/grails-script-docs-helper/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Grails Docs Helper Script</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-24T15:00:00+00:00" pubdate data-updated="true">Feb 24<span>th</span>, 2012</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>I am creating a hello world grails project for internal use here at our company.  The project encapsulates both the source code and the documentation in gdoc format.  When a new user comes onboard, they get the project from the source repository and then run the <code>grails doc</code> target to generate the guide locally with a tutorial on building a simple application.  In the project I have already included a full test suite that should pass when the tutorial is completed.</p>
+
+<p>I needed a way to have my version control ignored domain, service, and controllers that I was using be added in a way that kept them out of the base grails-app directory so the user could generate them.  At the same time I really wanted to put a link to what the finished classes would look like in the docs somewhere to help users along during the process if needed.  During this process I only wanted to have one master file and not have to maintain the code blocks in the gdoc files separately from actual code.</p>
+
+<!-- more -->
+
+
+<h4>Background</h4>
+
+<p>As I wrote the hello world tutorial I was in effect writting a simple application at the same time.  As I want the user to create all their own artifacts, I added them to my ignore list in version control.  This worked great and allowed me to build the docs and grab snippets of code for the gdoc and still maintain a shell of a project for users to be able to add these artifacts on their own when they followed the guide.</p>
+
+<p>Alas, I really didn&rsquo;t want to just throw away these objects I was creating or leave them on my machine only.  I came up with a way for me to have the best of both worlds by using a Grails script that executes a few simple ant tasks.  I figured I would backup the files into another directory that was checked in as well as generate gdocs out of the code directly at the same time.</p>
+
+<h4>Creating A Backup Script</h4>
+
+<p>I created a script in the <code>scripts</code> directory of the project named <code>GenerateDocs.groovy</code> which would allow me to copy the sources (in my case a directory named <code>answers</code> at the project root), generate the gdoc, and run the docs task in one command by invoking the target:</p>
+
+<pre><code>grails generate-docs
+</code></pre>
+
+<p>First I added the following block to the code to do the backup and run the grails doc target.</p>
+
+<figure class='code'><figcaption><span>GenerateDocs.groovy </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">includeTargets</span> <span class="o">&lt;&lt;</span> <span class="n">grailsScript</span><span class="o">(</span><span class="s2">&quot;_GrailsDocs&quot;</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">target</span><span class="o">(</span><span class="nl">main:</span> <span class="s2">&quot;Copy controllers, services, domain and views from svn excluded grails-app dirs to the answers dir and create gdoc from them in ref sidebar&quot;</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="c1">//make sure they all compile</span>
+</span><span class='line'>    <span class="n">depends</span><span class="o">(</span><span class="n">compile</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">//closure to include or exclude certain file types</span>
+</span><span class='line'>    <span class="kt">def</span> <span class="n">filesetToInclude</span> <span class="o">=</span> <span class="o">{</span><span class="n">directory</span> <span class="o">-&gt;</span>
+</span><span class='line'>        <span class="n">fileset</span><span class="o">(</span><span class="nl">dir:</span> <span class="n">directory</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">include</span><span class="o">(</span><span class="nl">name:</span> <span class="s1">&#39;**/*.groovy&#39;</span><span class="o">)</span>
+</span><span class='line'>            <span class="n">include</span><span class="o">(</span><span class="nl">name:</span> <span class="s1">&#39;**/*.gsp&#39;</span><span class="o">)</span>
+</span><span class='line'>            <span class="n">include</span><span class="o">(</span><span class="nl">name:</span> <span class="s1">&#39;**/*.xml&#39;</span><span class="o">)</span>
+</span><span class='line'>            <span class="n">include</span><span class="o">(</span><span class="nl">name:</span> <span class="s1">&#39;**/*.properties&#39;</span><span class="o">)</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">def</span> <span class="n">initCopyDirs</span> <span class="o">=</span> <span class="o">[</span><span class="s1">&#39;grails-app/controllers&#39;</span><span class="o">,</span> <span class="s1">&#39;grails-app/domain&#39;</span><span class="o">,</span> <span class="s1">&#39;grails-app/services&#39;</span><span class="o">,</span> <span class="s1">&#39;grails-app/views&#39;</span><span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">ant</span><span class="o">.</span><span class="na">sequential</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">//add the conf dir for now</span>
+</span><span class='line'>        <span class="o">(</span><span class="n">initCopyDirs</span> <span class="o">+</span> <span class="o">[</span><span class="s1">&#39;grails-app/conf&#39;</span><span class="o">]).</span><span class="na">each</span> <span class="o">{</span> <span class="n">directory</span> <span class="o">-&gt;</span>
+</span><span class='line'>            <span class="n">println</span> <span class="s2">&quot;copying $directory to answers/$directory&quot;</span>
+</span><span class='line'>            <span class="n">copy</span><span class="o">(</span><span class="nl">todir:</span> <span class="s2">&quot;answers/${directory}&quot;</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">filesetToInclude</span><span class="o">(</span><span class="n">directory</span><span class="o">)</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="n">println</span> <span class="s2">&quot;completed copying files&quot;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">depends</span><span class="o">(</span><span class="n">docs</span><span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">setDefaultTarget</span><span class="o">(</span><span class="n">main</span><span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This would take all the directories in my app that matched the path in the list initCopyDirs and copy then into the answers directory with identical pathing relative to grails-app.  I also only wanted to copy a subset of the files so I used the fileset include parameter to limit the files I copy.  I then added all the files under the answers directory into version control for safe keeping knowing if and when they changed in the original grails-app directory my script would overwrite these backups and they would be added for update in my next commit.  If I created any new files they would have to be manually added to version control.  Not really all that exciting but at least now I would know that my source code wasn&rsquo;t going to disappear since it was being ignored.</p>
+
+<h4>Creating Answers From Code</h4>
+
+<p>I wanted to take all the same files we were backing up and create a viewable code item on the Quick Reference sidebar.  To accomplish this I had to transform the .groovy files into .gdoc files and put them into the <code>src/docs/ref/Answers</code> directory.  I added the following ant build task to my script above to accomplish that:</p>
+
+<figure class='code'><figcaption><span>GenerateDocs.groovy </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'> <span class="n">initCopyDirs</span><span class="o">.</span><span class="na">each</span> <span class="o">{</span> <span class="n">directory</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="n">ant</span><span class="o">.</span><span class="na">fileScanner</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">filesetToInclude</span><span class="o">(</span><span class="n">directory</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">}.</span><span class="na">each</span> <span class="o">{</span><span class="n">File</span> <span class="n">file</span> <span class="o">-&gt;</span>
+</span><span class='line'>        <span class="n">println</span> <span class="s2">&quot;wrapping file ${file.name}&quot;</span>
+</span><span class='line'>        <span class="n">echo</span><span class="o">(</span><span class="nl">file:</span> <span class="s2">&quot;src/docs/ref/Answers/${file.name}.gdoc&quot;</span><span class="o">,</span> <span class="s2">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="s2">            {code}</span>
+</span><span class='line'><span class="s2">                ${file.getText()}</span>
+</span><span class='line'><span class="s2">            {code}</span>
+</span><span class='line'><span class="s2">        &quot;&quot;&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>What that code block accomplishes is to create a gdoc file for all matched files with the file&rsquo;s contents wrapped in <code>{code}</code> blocks.  For example it would take a Person.groovy file in the grails-app/domain directory and copy it answers/grails-app/domain an then create a file at src/docs/ref/Ansers/Person.groovy.gdoc with the following code snippet:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="o">{</span><span class="n">code</span><span class="o">}</span>
+</span><span class='line'><span class="kn">package</span> <span class="n">grails</span><span class="o">.</span><span class="na">hello</span><span class="o">.</span><span class="na">world</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">class</span> <span class="nc">Person</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">String</span> <span class="n">name</span>
+</span><span class='line'>    <span class="n">Integer</span> <span class="n">age</span>
+</span><span class='line'>    <span class="n">Date</span> <span class="n">createdDate</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">static</span> <span class="n">constraints</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">name</span><span class="o">(</span><span class="nl">nullable:</span> <span class="kc">false</span><span class="o">,</span> <span class="nl">blank:</span> <span class="kc">false</span><span class="o">)</span>
+</span><span class='line'>        <span class="n">age</span><span class="o">(</span><span class="nl">nullable:</span> <span class="kc">false</span><span class="o">,</span> <span class="nl">range:</span> <span class="mi">0</span><span class="o">..</span><span class="mi">150</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="o">{</span><span class="n">code</span><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That would show up in the generated doc pages as the following:</p>
+
+<p><img src="/images/docs/script.jpg"></p>
+
+<h4>The Whole Script</h4>
+
+<div><script src='https://gist.github.com/1902796.js?file=GenerateDocs.groovy'></script>
+<noscript><pre><code>includeTargets &lt;&lt; grailsScript(&quot;_GrailsDocs&quot;)
+
+target(main: &quot;Copy controllers, services, domain and views from svn excluded grails-app dirs to the answers dir and create gdoc from them in ref sidebar&quot;) {
+    //make sure they all compile
+    depends(compile)
+
+    //closure to include or exclude certain file types
+    def filesetToInclude = {directory -&gt;
+        fileset(dir: directory) {
+            include(name: '**/*.groovy')
+            include(name: '**/*.gsp')
+            include(name: '**/*.xml')
+            include(name: '**/*.properties')
+        }
+    }
+
+    def initCopyDirs = ['grails-app/controllers', 'grails-app/domain', 'grails-app/services', 'grails-app/views']
+
+    ant.sequential {
+        //add the conf dir for now
+        (initCopyDirs + ['grails-app/conf']).each { directory -&gt;
+            println &quot;copying $directory to answers/$directory&quot;
+            copy(todir: &quot;answers/${directory}&quot;) {
+                filesetToInclude(directory)
+            }
+        }
+        println &quot;completed copying files&quot;
+    }
+
+    initCopyDirs.each { directory -&gt;
+        ant.fileScanner {
+            filesetToInclude(directory)
+        }.each {File file -&gt;
+            println &quot;wrapping file ${file.name}&quot;
+            echo(file: &quot;src/docs/ref/Answers/${file.name}.gdoc&quot;, &quot;&quot;&quot;
+                {code}
+                    ${file.getText()}
+                {code}
+            &quot;&quot;&quot;)
+        }
+    }
+
+    depends(docs)
+}
+
+setDefaultTarget(main)
+</code></pre></noscript></div>
+
+
+<h4>Conclusion</h4>
+
+<p>Maybe this will be useful for you in some or all of it&rsquo;s entirety in the future!?</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Christian Oestreich</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-24T15:00:00+00:00" pubdate data-updated="true">Feb 24<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/grails/'>Grails</a>, <a class='category' href='/blog/categories/groovy/'>Groovy</a>, <a class='category' href='/blog/categories/technology/'>Technology</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://www.christianoestreich.com/2012/02/grails-script-docs-helper/" data-via="ctoestreich" data-counturl="http://www.christianoestreich.com/2012/02/grails-script-docs-helper/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/2012/02/grails-cxf-client-http-client-policy.markdown/" title="Previous Post: Grails Cxf Client 1.2.7 Released">&laquo; Grails Cxf Client 1.2.7 Released</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/2012/03/grails-cxf-client-soap-exceptions/" title="Next Post: Grails Cxf Client 1.2.9 Released">Grails Cxf Client 1.2.9 Released &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.christianoestreich.com/2012/02/grails-script-docs-helper/';
+        var disqus_url = 'http://www.christianoestreich.com/2012/02/grails-script-docs-helper/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

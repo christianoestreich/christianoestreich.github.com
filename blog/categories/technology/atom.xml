@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Technology | Christian Oestreich]]></title>
+  <link href="http://www.christianoestreich.com/blog/categories/technology/atom.xml" rel="self"/>
+  <link href="http://www.christianoestreich.com/"/>
+  <updated>2013-12-13T20:45:33+00:00</updated>
+  <id>http://www.christianoestreich.com/</id>
+  <author>
+    <name><![CDATA[Christian Oestreich]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Grails Plugin Template Override]]></title>
+    <link href="http://www.christianoestreich.com/2013/07/grails-plugin-template-override/"/>
+    <updated>2013-07-02T10:00:00+00:00</updated>
+    <id>http://www.christianoestreich.com/2013/07/grails-plugin-template-override</id>
+    <content type="html"><![CDATA[<p>Recently in the <a href="http://grails.org/plugin/filterpane" title="Grails Filterpane Plugin">Grails Filterpane Plugin</a> I had to figure out a way to allow users to selectively override the bundled template files that were rendered in the filterpane taglib.  I was able to achieve this through a bit of simple code that may be helpful to plugin authors in the future.</p>
+
+<!-- more -->
+
+
+<h2>The Code</h2>
+
+<p>The bit of magic in the code below is the line <code>groovyPageLocator.findTemplateInBinding(path, pageScope)</code>.  This equates to is asking grails to find a template for the path in the project scope.  I then check if the result of the call is null and append the filterpane plugin to the resulting map causing the render to use the plugin vs the local template.  This works well because apparently you can specify <code>plugin: null</code> in the render block which is the same as saying &ldquo;use the current project scope&rdquo;.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>FilterPaneTagLib.groovy </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'> <span class="kt">def</span> <span class="n">filterButton</span> <span class="o">=</span> <span class="o">{</span> <span class="n">attrs</span><span class="o">,</span> <span class="n">body</span> <span class="o">&amp;</span><span class="n">ndash</span><span class="o">;&gt;&lt;</span><span class="s">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">&lt;pre&gt;&lt;code&gt;//do some work here</span>
+</span><span class='line'><span class="s">//...</span>
+</span><span class='line'><span class="s">//...</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">Map template = getTemplatePath(&#39;filterButton&#39;);</span>
+</span><span class='line'><span class="s">out &amp;lt;&amp;lt; render(template: template.path, plugin: template.plugin, model: renderModel)</span>
+</span><span class='line'><span class="s">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="s">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">&lt;p&gt;}&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kd">public</span> <span class="n">LinkedHashMap</span><span class="o">&amp;</span><span class="n">lt</span><span class="o">;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">getTemplatePath</span><span class="o">(</span><span class="n">String</span> <span class="n">templateName</span><span class="o">)</span> <span class="o">{&lt;</span><span class="s">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s">&lt;pre&gt;&lt;code&gt;def path = appendPiecesForUri(&quot;/</span><span class="n">_filterpane</span><span class="err">&quot;</span><span class="o">,</span> <span class="n">templateName</span><span class="o">)</span> <span class="c1">//create the url path</span>
+</span><span class='line'><span class="kt">def</span> <span class="n">template</span> <span class="o">=</span> <span class="o">[</span><span class="nl">path:</span> <span class="n">path</span><span class="o">]</span> <span class="c1">//add it to the map</span>
+</span><span class='line'><span class="kt">def</span> <span class="n">override</span> <span class="o">=</span> <span class="n">groovyPageLocator</span><span class="o">.</span><span class="na">findTemplateInBinding</span><span class="o">(</span><span class="n">path</span><span class="o">,</span> <span class="n">pageScope</span><span class="o">)</span> <span class="c1">//check if template exists in project scope</span>
+</span><span class='line'><span class="k">if</span><span class="o">(!</span><span class="n">override</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">template</span><span class="o">.</span><span class="na">plugin</span> <span class="o">=</span> <span class="s1">&#39;filterpane&#39;</span> <span class="c1">//looks like no, so use default plugin version instead</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="n">template</span>  <span class="c1">//return map</span>
+</span><span class='line'><span class="o">&lt;</span><span class="s">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Travis CI & Grails GVM]]></title>
+    <link href="http://www.christianoestreich.com/2013/05/travis-ci-grails-gvm/"/>
+    <updated>2013-05-09T10:00:00+00:00</updated>
+    <id>http://www.christianoestreich.com/2013/05/travis-ci-grails-gvm</id>
+    <content type="html"><![CDATA[<p>For quite a while I have been stuck using grails 2.2.0 on a <a href="https://travis-ci.org" title="Travis CI">Travis CI</a> build server due to any later version not being added to the groovy ppa on ubuntu.  This was done because of the move to the <a href="http://gvmtool.net/" title="the Groovy enVironment Manager">GVM</a> tool.  I was able to cobble together a travis script and <a href="http://gvmtool.net/" title="the Groovy enVironment Manager">GVM</a> hack to get this working.  This is great because now I can use Grails 2.2.1, 2.2.2, etc.</p>
+
+<!-- more -->
+
+
+<h2>The Hack</h2>
+
+<p>When setting up the script I noticed that it was failing due to a return code of 1.  I forked and inspected the <a href="http://gvmtool.net/" title="the Groovy enVironment Manager">GVM</a> code and identified a fix.  It needed to return a 0 after it does the install.</p>
+
+<p>I have submitted a <a href="https://github.com/gvmtool/gvm/pull/167" title="Pull Request">pull request</a> to fix the return issue in the gvm-install.sh script, but in the meantime you will need to keep the bit in the before-install block where it grabs my file and replaces the current one as seen in the script below.</p>
+
+<h2>The Setup</h2>
+
+<p>Travis appears to come with a package called GVM already on the box for Go language management.  We have to remove that first via <code>rm -rf ~/.gvm</code>.  We are then free to install <a href="http://gvmtool.net/" title="the Groovy enVironment Manager">GVM</a> as it will not fail the check for the ~/.gvm directory.</p>
+
+<p>Travis doesn&rsquo;t like you to pipe commands back to bash as suggested in the GVM docs via <code>curl -s get.gvmtool.net | bash</code> so we have to get the install script and stick it into local file to execute.  We do this via this code block.</p>
+
+<p><code>
+curl -s get.gvmtool.net &gt; ~/install_gvm.sh
+chmod 775 ~/install_gvm.sh
+~/install_gvm.sh
+</code></p>
+
+<p>We then have to tell <a href="http://gvmtool.net/" title="the Groovy enVironment Manager">GVM</a> to not prompt us defaults during install by appending to the config <code>echo "gvm_auto_answer=true" &gt; ~/.gvm/etc/config</code>.</p>
+
+<p>Then we hack the install with my pull (which can hopefully be removed later) via <code>curl -s https://raw.github.com/ctoestreich/gvm/master/src/main/bash/gvm-install.sh &gt; ~/.gvm/src/gvm-install.sh</code></p>
+
+<p>After that we are golden to set up the source and install any version of grails we need.</p>
+
+<p><code>
+source ~/.gvm/bin/gvm-init.sh
+gvm install grails 2.2.1
+gvm use grails 2.2.1
+</code></p>
+
+<p>The rest of the build file is pretty vanilla.</p>
+
+<h2>The Script</h2>
+
+<p>Here is the .travis.yml script that you will need for your project and a link to a <a href="https://github.com/Grails-Plugin-Consortium/grails-filterpane-demo/blob/master/.travis.yml" title="Working Example">working example</a>.</p>
+
+<p>```
+language: groovy</p>
+
+<p>jdk:
+&ndash; oraclejdk6</p>
+
+<p>before_install:
+&ndash; rm -rf ~/.gvm
+&ndash; curl -s get.gvmtool.net > ~/install_gvm.sh
+&ndash; chmod 775 ~/install_gvm.sh
+&ndash; ~/install_gvm.sh
+&ndash; echo &ldquo;gvm_auto_answer=true&rdquo; > ~/.gvm/etc/config
+&ndash; curl -s <a href="https://raw.github.com/ctoestreich/gvm/master/src/main/bash/gvm-install.sh">https://raw.github.com/ctoestreich/gvm/master/src/main/bash/gvm-install.sh</a> > ~/.gvm/src/gvm-install.sh
+&ndash; source ~/.gvm/bin/gvm-init.sh
+&ndash; gvm install grails 2.2.1
+&ndash; gvm use grails 2.2.1</p>
+
+<p>branches:
+  only:</p>
+
+<pre><code>- master
+</code></pre>
+
+<p>script: grails test-app &mdash;non-interactive
+```</p>
+
+<p>Once the pull request is complete you will be able to remove the line:</p>
+
+<p><code>
+- curl -s https://raw.github.com/ctoestreich/gvm/master/src/main/bash/gvm-install.sh &gt; ~/.gvm/src/gvm-install.sh
+</code></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[WSS4J Simple Security Using Groovy WSLite]]></title>
+    <link href="http://www.christianoestreich.com/2013/01/wss4j-simple-security-using-wslite/"/>
+    <updated>2013-01-17T10:00:00+00:00</updated>
+    <id>http://www.christianoestreich.com/2013/01/wss4j-simple-security-using-wslite</id>
+    <content type="html"><![CDATA[<p>Recently I ran into an issue where using the builtin <code>HTTPBasicAuthorization</code> provided by <a href="https://github.com/jwagenleitner/groovy-wslite" title="wslite github">wslite</a> did not meet the needs of using a simple plain text username and password in the soap header of a soap service request.</p>
+
+<!-- more -->
+
+
+<p>I tried at first to use the basic authorization through <code>HTTPBasicAuthorization</code> realizing that I didn&rsquo;t need http security, but a soap header.  I was able to manually add this header to <a href="https://github.com/jwagenleitner/groovy-wslite" title="wslite github">wslite</a> in my test case by adding a header closure with the <code>Security</code> and <code>UsernameToken</code> attributes and children.</p>
+
+<p>``` groovy
+def username = &ldquo;wsuser&rdquo;
+def password = &ldquo;secret&rdquo;</p>
+
+<p>SOAPResponse response = client.send {</p>
+
+<pre><code>envelopeAttributes "xmlns:test": 'http://test.cxf.grails.org/', "xmlns:soapenv":"soapenv"
+version SOAPVersion.V1_1
+header {
+    'wsse:Security'('soapenv:mustUnderstand': "1", 'xmlns:wsse': 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd', 'xmlns:wsu': 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd') {
+        'wsse:UsernameToken'('wsu:Id':"UsernameToken-13") {
+            'wsse:Username'(username)
+            'wsse:Password'('Type':'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText',password)
+            'wsse:Nonce'('EncodingType':'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary',new String(password.bytes.encodeBase64().toString()))
+            'wsu:Created'('2013-01-18T16:19:17.950Z')
+        }
+    }
+}
+body {
+    'test:simpleMethod' {
+        param('HELLO WORLD')
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>For more details you can see my usage in the <a href="https://github.com/thorstadt/grails-cxf#custom-security-interceptors" title="cxf plugin documentation">documentation</a> for the cxf plugin or in the <a href="https://github.com/thorstadt/grails-cxf/blob/master/test/functional/org/grails/cxf/test/AnnotatedSecureServiceSpec.groovy" title="wslite security test">spock test directly</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[CoffeeScript Ant Task Updated]]></title>
+    <link href="http://www.christianoestreich.com/2012/12/coffeescript-ant-task-updated/"/>
+    <updated>2012-12-07T10:00:00+00:00</updated>
+    <id>http://www.christianoestreich.com/2012/12/coffeescript-ant-task-updated</id>
+    <content type="html"><![CDATA[<p>In one of our projects at work I really wanted to use CoffeeScript as a tool to create better scoped and JSLint friendly JavaScript.  The problem I ran into was that we are using Apache Ant and getting the .coffee to .js was a bit of a chore.</p>
+
+<!-- more -->
+
+
+<p>I played around with using the coffee.exe from <a href="https://github.com/alisey/CoffeeScript-Compiler-for-Windows" title="windows coffescript compiler executable">github</a>.  This approach worked, but as our conversion of files and lines grew so did the compile time.  We needed something smarter that could inspect files and skip unmodified files.</p>
+
+<p>I found the CoffeeScript compiling ant task project out on <a href="https://github.com/pmuellr/CoffeeScriptAntTasks" title="CoffeeScriptAntTasks fork">github</a>.  This worked well, but was on an older version of CoffeeScript 0.9.0 and would output all the .js files under a single destination directory.  Meaning all the cs/<em>*/</em>.coffee files would output to one single directory.  We really wanted to inherit the directory structure and keep the compiled JavaScripts neatly tucked into their respective directory structures.</p>
+
+<p>I decided to <a href="https://github.com/ctoestreich/CoffeeScriptAntTasks" title="CoffeeScriptAntTasks fork">fork and update the project</a>.  In doing so I also learned a bit about creating custom ant tasks.  Hopefully anyone else out there who is using ant and wants to use CoffeeScript finds this helpful.  A huge thanks to <a href="https://github.com/pmuellr" title="Patrick Meuller">Patrick Mueller</a> for creating this project.  With a few small tweaks it has become essential in our JS->CS migration.</p>
+
+<p>Here is the 0.1.6 Change Log:</p>
+
+<p><strong>0.1.6 &ndash; 2012/11/26</strong></p>
+
+<ul>
+<li>Updated to CoffeeScript 1.4.0</li>
+<li>Changed Task for <code>CoffeeScriptC</code> to inherit <code>Task</code> instead of <code>MatchingTask</code> so we can add a boolean flag to optionally inherit directory nesting. The new flag is called <code>nesting</code>.</li>
+<li>Changed <code>noWrap</code> to the new <code>bare</code> param for coffee-script compiler.</li>
+<li>Added download directory containing versioned jars.</li>
+</ul>
+
+
+<p>You can get more details at <a href="https://github.com/ctoestreich/CoffeeScriptAntTasks" title="CoffeeScriptAntTasks fork">https://github.com/ctoestreich/CoffeeScriptAntTasks</a>.  The latest 0.1.6 jar can be found in the <a href="https://github.com/ctoestreich/CoffeeScriptAntTasks/tree/master/downloads" title="0.1.6 download">downloads</a> directory of the project or the <a href="https://github.com/ctoestreich/CoffeeScriptAntTasks/downloads" title="0.1.6 download">downloads</a> section of github.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Grails CXF Plugin Version 1.x Released]]></title>
+    <link href="http://www.christianoestreich.com/2012/11/grails-cxf-plugin-version-one-released/"/>
+    <updated>2012-11-10T10:52:02+00:00</updated>
+    <id>http://www.christianoestreich.com/2012/11/grails-cxf-plugin-version-one-released</id>
+    <content type="html"><![CDATA[<p>The <a href="http://grails.org/plugin/cxf" title="grails cxf plugin">Grails Cxf Plugin</a> makes exposing classes (services and endpoints) as SOAP web services easy and painless.  Since version 1.0.0, it has been rewritten and enhanced to support more features including the migration to grails 2.x.</p>
+
+<p>The current cxf version is <a href="https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12310511&amp;styleName=Html&amp;Create=Create&amp;version=12321668">2.6.2</a></p>
+
+<p>Some new things as of version 1.x are as follows:</p>
+
+<ul>
+<li>The plugin will autowire configured classes in the grails-app\endpoints*<em> AND the grails-app\services*</em> directories</li>
+<li>Endpoint creation scripts create-endpoint and create-endpoint-simple will create cxf artefacts in grails-app\endpoints</li>
+<li>Service creation scripts create-cxf-service and create-cxf-service-simple will create cxf artefacts in grails-app\services</li>
+<li>The suggested pattern to isolate cxf endpoints is to have endpoints live in grails-app/endpoints directory (or you can use grails-app/services for overlapping and shared services)</li>
+<li>Built in support for simple Map response type handling via <code>@XmlJavaTypeAdapter(GrailsCxfMapAdapter.class)</code> method annotation has been included to use or to kick start your own map adapter creation</li>
+<li>Many new examples to help with configuration can be found in the source via functional specs and test classes at <a href="https://github.com/Grails-Plugin-Consortium/grails-cxf">https://github.com/Grails-Plugin-Consortium/grails-cxf</a></li>
+<li>Default plugin configuration is provided via <code>DefaultCxfConfig.groovy</code>.  Although usually not necessary, you can override in your project&rsquo;s Config.groovy</li>
+<li>The default url for wsdl viewing remains <code>http://.../[app name if not root]/services</code> as it was in previous versions.  Multiple cxf servlet endpoints can be configured or the default changed via Config.goovy</li>
+<li>Wsdl First services are now available to use</li>
+<li>Plugin should be <em>mostly</em> backwards compatible and work in grails 1.3.x</li>
+</ul>
+
+
+<p>You can get more details at <a href="https://github.com/Grails-Plugin-Consortium/grails-cxf" title="grails cxf plugin">https://github.com/Grails-Plugin-Consortium/grails-cxf</a></p>
+
+<p>There is also a demo project if you do not want to run the cxf plugin code inline at <a href="https://github.com/Grails-Plugin-Consortium/grails-cxf-demo" title="grails cxf test project">https://github.com/Grails-Plugin-Consortium/grails-cxf-demo</a></p>
+]]></content>
+  </entry>
+  
+</feed>

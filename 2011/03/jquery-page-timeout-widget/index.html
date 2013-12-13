@@ -1,0 +1,506 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>jQuery Timeout Dialog Widget - Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="The code for the plugin is available over on Github &ndash; jQuery Timeout Dialog Widget. I was looking into what was available for making a browser &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/2011/03/jquery-page-timeout-widget/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">jQuery Timeout Dialog Widget</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-03-26T20:24:24+00:00" pubdate data-updated="true">Mar 26<span>th</span>, 2011</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>The code for the plugin is available over on <a href="https://github.com/ctoestreich/jquery-timeoutdialog" title="jquery timeoutdialog widget">Github &ndash; jQuery Timeout Dialog Widget</a>.</p>
+
+<p>I was looking into what was available for making a browser idle timer that
+would redirect the user to a logoff page.  I really liked the work that was
+done by <a href="http://paulirish.com/" title="Paul Irish">Paul Irish</a> on his <a href="http://paulirish.com/2009/jquery-idletimer-plugin/" title="idle timer">idleTimer plugin</a> as well as <a href="http://www.erichynds.com/" title="Eric Hynd">Eric Hynd</a>
+on his <a href="http://www.erichynds.com/jquery/a-new-and-improved-jquery-idle-timeout-plugin/" title="Idle Timeout Plugin">Idle Timeout Plugin</a>.  The first thing I did was put their code
+onto our site.   It was pretty easy to hook up and get working.</p>
+
+<!-- more -->
+
+
+<p>We are running WebSphere 6.1 (hopefully moving to JBoss) and the global server
+session timeout is 30 minutes.  After all was said and done, I decided that
+what they had was probably overkill for what we were requiring.  The portion
+of the idleTimer script the detects whether you are idle binds to the
+following document events.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>events = 'mousemove keydown DOMMouseScroll mousewheel mousedown'; //activity is one of these events</span></code></pre></td></tr></table></div></figure>
+
+
+<p>What this translates to is listeners bound to almost every user interactive
+DOM events.  While this probably won&rsquo;t kill the browser performance by itself,
+given that we have other dom events being listened to and our users are on IE6
+<em>sigh</em>, I felt this was very heavy for just timing the user out of a session.</p>
+
+<p>There were also a few features from the Idle Timeout Plugin that we didn&rsquo;t
+need such as having to ping the server via ajax unless they reach some
+threshold time before the timeout.  Essentially we only want to call the
+server refresh session via ajax if the user invokes it via the &ldquo;keep-me-alive&rdquo;
+dialog.</p>
+
+<p>We also didn&rsquo;t need the timer to loop every second.  We set ours for a minute.
+I almost justified having the timer look on a algorithm based on a combination
+of the alert and timeout values, but that might also be overkill for what we
+were doing.</p>
+
+<p>For the widget to work you will need to include jQuery and jQuery-ui.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;timeoutDialog&quot;</span> <span class="na">style=</span><span class="s">&quot;display:none;&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'> <span class="nt">&lt;p&gt;</span>[Some message here]<span class="nt">&lt;/p&gt;</span>
+</span><span class='line'> <span class="nt">&lt;p&gt;</span>
+</span><span class='line'> You will time out in <span class="nt">&lt;span</span> <span class="na">id=</span><span class="s">&quot;countdownTargetSpan&quot;</span> <span class="na">style=</span><span class="s">&quot;font-weight:bold&quot;</span><span class="nt">&gt;&lt;/span&gt;</span>
+</span><span class='line'> <span class="nt">&lt;/p&gt;</span>
+</span><span class='line'><span class="nt">&lt;/div&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>   <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#timeoutDialog&quot;</span><span class="p">).</span><span class="nx">timeoutdialog</span><span class="p">({</span>
+</span><span class='line'>       <span class="nx">idleTimeout</span><span class="o">:</span> <span class="mi">5</span><span class="p">,</span>
+</span><span class='line'>       <span class="nx">idleAlert</span><span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>       <span class="nx">keepAliveURL</span><span class="o">:</span> <span class="s2">&quot;ajax.html&quot;</span><span class="p">,</span>
+</span><span class='line'>       <span class="nx">validResponseText</span><span class="o">:</span> <span class="s1">&#39;OK&#39;</span><span class="p">,</span>
+</span><span class='line'>       <span class="nx">countdownTarget</span><span class="o">:</span> <span class="s1">&#39;countdownTargetSpan&#39;</span><span class="p">,</span>
+</span><span class='line'>       <span class="nx">buttonContinueText</span><span class="o">:</span> <span class="s1">&#39;Ok&#39;</span><span class="p">,</span>
+</span><span class='line'>       <span class="nx">buttonSignoffText</span><span class="o">:</span> <span class="s1">&#39;Sign Off&#39;</span><span class="p">,</span>
+</span><span class='line'>       <span class="nx">onTimeout</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nb">window</span><span class="p">.</span><span class="nx">location</span> <span class="o">=</span> <span class="s2">&quot;timeout.html&quot;</span><span class="p">;</span>
+</span><span class='line'>       <span class="p">},</span>
+</span><span class='line'>       <span class="nx">onSignoff</span><span class="o">:</span> <span class="kd">function</span><span class="p">(){</span>
+</span><span class='line'>          <span class="nb">window</span><span class="p">.</span><span class="nx">location</span> <span class="o">=</span> <span class="s2">&quot;signoff.html&quot;</span><span class="p">;</span>
+</span><span class='line'>       <span class="p">}</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'> <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The code for the plugin is available over on <a href="https://github.com/ctoestreich/jquery-timeoutdialog" title="jquery timeoutdialog widget">Github &ndash; jQuery Timeout Dialog Widget</a>.  I have both the minimized and uncompressed files in the source so
+you can make any changes you feel necessary to the widget.</p>
+
+<p>This is just a simpler implementation of some pre-existing widgets with a
+simpler and less taxing code base and can hopefully be useful to those people
+who do not need a complex solution to keep a session active and timeout
+dialog.  The only real advantage to this over just doing a simple javascript
+timer and alert is the more elegant jQuery dialog box&hellip;  we liked the look of
+this over the alert box better.</p>
+
+<table>
+<thead>
+<tr>
+<th align="left"><strong>Value</strong></th>
+<th align="center"><strong>Description</strong></th>
+<th align="right"><strong>Default</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><em>idleTimeout</em></td>
+<td align="center">Value in minutes that the session will timeout.</td>
+<td align="right">30</td>
+</tr>
+<tr>
+<td align="left"><em>idleAlert</em></td>
+<td align="center">Value in minutes that the alert dialog will be shown</td>
+<td align="right">25</td>
+</tr>
+<tr>
+<td align="left"><em>keepAliveURL</em></td>
+<td align="center">URL for the ajax to invoke to keep the session alive</td>
+<td align="right">&lsquo;&rsquo;</td>
+</tr>
+<tr>
+<td align="left"><em>validResponseText</em></td>
+<td align="center">Response from the ajax call in plain text (html) that signifies a valid session renewed</td>
+<td align="right">&lsquo;OK&rsquo;</td>
+</tr>
+<tr>
+<td align="left"><em>countdownTarget</em></td>
+<td align="center">span where the seconds remaining will be placed</td>
+<td align="right">&lsquo;countdownTargetSpan&rsquo;</td>
+</tr>
+<tr>
+<td align="left"><em>buttonContinueText</em></td>
+<td align="center">Text for the Continue session button</td>
+<td align="right">&lsquo;Ok&rsquo;</td>
+</tr>
+<tr>
+<td align="left"><em>buttonSignoffText</em></td>
+<td align="center">Text for the Sign Off session button</td>
+<td align="right">&lsquo;Sign Off&rsquo;</td>
+</tr>
+<tr>
+<td align="left"><em>onTimeout</em></td>
+<td align="center">Action when timeout happens, usually a redirect to timeout url</td>
+<td align="right">function(){}</td>
+</tr>
+<tr>
+<td align="left"><em>onSignoff</em></td>
+<td align="center">Action when timeout happens, usually a redirect to signoff url</td>
+<td align="right">function(){}</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>The code for the plugin is available over on <a href="https://github.com/ctoestreich/jquery-timeoutdialog" title="jquery timeoutdialog widget">Github &ndash; jQuery Timeout Dialog Widget</a>.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">ctoestreich</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-03-26T20:24:24+00:00" pubdate data-updated="true">Mar 26<span>th</span>, 2011</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/technology/'>Technology</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://www.christianoestreich.com/2011/03/jquery-page-timeout-widget/" data-via="ctoestreich" data-counturl="http://www.christianoestreich.com/2011/03/jquery-page-timeout-widget/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/2011/03/page-masking-with-jquery/" title="Previous Post: Page Masking With jQuery">&laquo; Page Masking With jQuery</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/2011/03/jenkins-upgrade-script/" title="Next Post: Jenkins Upgrade Script">Jenkins Upgrade Script &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.christianoestreich.com/2011/03/jquery-page-timeout-widget/';
+        var disqus_url = 'http://www.christianoestreich.com/2011/03/jquery-page-timeout-widget/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

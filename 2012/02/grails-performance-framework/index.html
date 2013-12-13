@@ -1,0 +1,651 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Grails Performance Framework - Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="I built a relatively simple framework to do performance testing of code using redis, jesque and executor. It uses some jQuery and ajax on the front &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/2012/02/grails-performance-framework/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Grails Performance Framework</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-02T14:12:00+00:00" pubdate data-updated="true">Feb 2<span>nd</span>, 2012</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>I built a <em>relatively</em> simple framework to do performance testing of code using <a href="http://www.grails.org/plugin/redis" title="Redis Plugin">redis</a>, <a href="http://www.grails.org/plugin/jesque" title="Jesque Plugin">jesque</a> and <a href="http://www.grails.org/plugin/executor" title="Executor Plugin">executor</a>.  It uses some jQuery and ajax on the front end and provides a relatively simple administrative UI.  The code is currently availabe on <a href="https://github.com/ctoestreich/gperf" title="GPERF Framework">github</a>.  The overhead of the perf runner is relatively light and extremely fast as it is using <a href="http://www.grails.org/plugin/redis" title="Redis Plugin">redis</a> as its storage mechanism for queues, jobs, statistics, and status.  If you would like to change where or how the results are saved you could certainly hack the code in the ResultsService.</p>
+
+<!-- more -->
+
+
+<h2>Update 2/7/12</h2>
+
+<p>I have made some slight changes to the framework and have updated this post and docs to illustrate the changes.  More specifically I have moved the Result interface and Result inheritors into the src/groovy directory as domain object support isn&rsquo;t currently required and was causing a bit of an issue during jsonification.</p>
+
+<h2>Detailed Description</h2>
+
+<p>Using a web admin console, configured jobs can be submitted via ajax to a queue in jesque with a type (workerClass) and number of threads to run.  A jesque worker will then pick up the queued jobs and spawn off a number of worker threads using executor.  These threads will continue to run until the user then stops the job via the admin console.  Stopping the job is essentially flipping an active flag for the job to false in the datastore (<a href="http://www.grails.org/plugin/redis" title="Redis Plugin">redis</a>).  Ther results will be updated near-time on the screen using a custom ajax enabled jQuery widget that polls and aggregates the data from redis.  These operations are extremely fast due to the speed of <a href="http://www.grails.org/plugin/redis" title="Redis Plugin">redis</a>.</p>
+
+<p>The admin console provides the following functionality:</p>
+
+<ul>
+<li>View paged resultset of successful &amp; error results per job</li>
+<li>List all keys in Redis</li>
+<li>Clear all results</li>
+<li>Clear all data (Flush Redis Database)</li>
+</ul>
+
+
+<p>See the sequence diagram below for a UML view of how the system operates.</p>
+
+<p><em>There may be a slight delay in the updating of statistics both when starting and stopping the tests as the jQuery widget only updates stats every 5s.</em></p>
+
+<h2>Create A Job</h2>
+
+<p>To create a new performance job simply create a new service in the services/com/perf/runners directory.  I have 3 sample jobs created in the base project.  It is important that you extend the <code>AbstractPerformanceService</code> and implement the <code>performTest</code> method.</p>
+
+<p>The abstract service contains a benchmark method that accepts a closure which you should use to encapsulate the code you wish to time.  The benchmark method will return the time in ms the closure took to execute.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kd">class</span> <span class="nc">LargeNumberPerformanceService</span> <span class="kd">extends</span> <span class="n">AbstractPerformanceService</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Result</span> <span class="nf">performTest</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">Long</span> <span class="n">result</span> <span class="o">=</span> <span class="mi">1</span>
+</span><span class='line'>        <span class="kt">def</span> <span class="n">executionTime</span> <span class="o">=</span> <span class="n">benchmark</span> <span class="o">{</span>
+</span><span class='line'>            <span class="mi">100000</span><span class="o">.</span><span class="na">times</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">result</span> <span class="o">+=</span> <span class="n">it</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="k">new</span> <span class="nf">SimpleResult</span><span class="o">(</span><span class="nl">testName:</span> <span class="s1">&#39;Long Number Performance Service&#39;</span><span class="o">,</span> <span class="nl">executionTime:</span> <span class="n">executionTime</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This method performTest must return a Result interface as this will be used to log into the results data cache in redis.  I have two types of results, SimpleResult and ComparisonResult, that both inherit from Result and are demonstrated in the project.  Users are free to add their own types of result objects if they need more fields.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'> <span class="kd">interface</span> <span class="nc">Result</span> <span class="o">{</span>
+</span><span class='line'>     <span class="n">String</span> <span class="n">testName</span>
+</span><span class='line'>     <span class="n">String</span> <span class="n">details</span>
+</span><span class='line'>     <span class="n">Integer</span> <span class="n">executionTime</span>
+</span><span class='line'>     <span class="n">Date</span> <span class="n">createDate</span>
+</span><span class='line'>     <span class="n">Boolean</span> <span class="n">isError</span>
+</span><span class='line'> <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="nd">@ToString</span><span class="o">(</span><span class="n">includeNames</span> <span class="o">=</span> <span class="kc">true</span><span class="o">,</span> <span class="n">includeFields</span> <span class="o">=</span> <span class="kc">true</span><span class="o">,</span> <span class="n">excludes</span> <span class="o">=</span> <span class="s2">&quot;class, id&quot;</span><span class="o">)</span>
+</span><span class='line'><span class="kd">class</span> <span class="nc">SimpleResult</span> <span class="kd">implements</span> <span class="n">Serializable</span><span class="o">,</span> <span class="n">Result</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">String</span> <span class="n">testName</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">details</span>
+</span><span class='line'>    <span class="n">Integer</span> <span class="n">executionTime</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">Date</span> <span class="n">createDate</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Date</span><span class="o">()</span>
+</span><span class='line'>    <span class="n">Boolean</span> <span class="n">isError</span> <span class="o">=</span> <span class="kc">false</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="nd">@ToString</span><span class="o">(</span><span class="n">includeNames</span> <span class="o">=</span> <span class="kc">true</span><span class="o">,</span> <span class="n">includeFields</span> <span class="o">=</span> <span class="kc">true</span><span class="o">,</span> <span class="n">excludes</span> <span class="o">=</span> <span class="s2">&quot;class, id&quot;</span><span class="o">)</span>
+</span><span class='line'><span class="kd">class</span> <span class="nc">ComparisonResult</span> <span class="kd">extends</span> <span class="n">SimpleResult</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">result1</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">result2</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Result Interface Fields:</p>
+
+<pre><code>testName - This can be an abitrary value that you would like, simply used when displaying detailed results view.
+details - If you would like to put any specific output from the test like facts, figures, etc. you can do so in the details field.
+executionTime - This should be the value of the result from the benchmark method.  You could roll your own timing schema and put that value here.
+createDate - The date, defaulted to now, simply used when displaying detailed results view.
+isError - This will cause the result to be logged into the error queue.  You should set this if an error condition occurs perhaps in a try catch or when unexpected results are reached.
+</code></pre>
+
+<p>Here is an example of a test the may set the error flag if the results are empty or an exception occurs:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">Result</span> <span class="nf">performTest</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">String</span> <span class="n">quote</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'>    <span class="n">Boolean</span> <span class="n">isError</span> <span class="o">=</span> <span class="kc">false</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">def</span> <span class="n">duration</span> <span class="o">=</span> <span class="n">benchmark</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">quote</span> <span class="o">=</span> <span class="n">stockQuoteClient</span><span class="o">.</span><span class="na">getQuote</span><span class="o">(</span><span class="n">randomStock</span><span class="o">)</span>
+</span><span class='line'>        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">isError</span> <span class="o">=</span> <span class="kc">true</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">new</span> <span class="nf">SimpleResult</span><span class="o">(</span><span class="nl">details:</span> <span class="n">quote</span><span class="o">,</span> <span class="nl">isError:</span> <span class="o">(</span><span class="n">isError</span> <span class="o">||</span> <span class="o">!</span><span class="n">quote</span><span class="o">),</span> <span class="nl">executionTime:</span> <span class="n">duration</span><span class="o">,</span> <span class="nl">testName:</span> <span class="s1">&#39;Stock Quote Performance Service&#39;</span><span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The last and most important step for activating a performance job is adding the job config to the Config.groovy perf runners block.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">perf</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">runners</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">jobName</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">description</span>
+</span><span class='line'>            <span class="n">maxWorkers</span>
+</span><span class='line'>            <span class="n">workerClass</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The values are represented via the following:</p>
+
+<pre><code>jobName - A unique name for the job node (no spaces)
+description - A name that will be used to display on the jobs screen
+maxWorkers - Max number of workers available to choose on job screen.  Will be between 1 and maxWorkers in drop down.
+workerClass - Points to the class of the worker to wire up to the job.
+</code></pre>
+
+<p><em>The jobName MUST be unique or you will get overlapping and/or inaccurate results.</em></p>
+
+<p>To wire up the LargeNumberPerformanceService job above to show up in the admin console as an available job you need to add the following:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">perf</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">runners</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">largeNumberPerformanceRunner</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;Large Number Performance Test&#39;</span>
+</span><span class='line'>            <span class="n">maxWorkers</span> <span class="o">=</span> <span class="mi">20</span>
+</span><span class='line'>            <span class="n">workerClass</span> <span class="o">=</span> <span class="n">com</span><span class="o">.</span><span class="na">perf</span><span class="o">.</span><span class="na">runners</span><span class="o">.</span><span class="na">math</span><span class="o">.</span><span class="na">LargeNumberPerformanceService</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note: I have not tested a large number of jobs, but having several available to run would be okay.  If you tried to run several jobs with large thread pools, you will probably experience inaccurate results as your machine struggles to keep up.  Leaving the job service classes in place but simply commenting out the jobName block in the config will cause the admin console to not list the job for running and should take up no overhead while essentially disabling the job.</p>
+
+<h2>Simplified Sequence Diagram</h2>
+
+<p><img src="/images/gperf/processflow.png"></p>
+
+<h2>Running the Application</h2>
+
+<p><em>You will need to start a redis server and make sure the Config.groovy points to it before running the application.</em></p>
+
+<p>Once one or more jobs are configured and redis is running you can <code>run-app</code> and navigate to <a href="http://localhost:8080/gperf" title="Local Web App">localhost</a>.</p>
+
+<h2>Admin Console</h2>
+
+<p>The main admin console view:</p>
+
+<p><img src="/images/gperf/admin1.jpg"></p>
+
+<p>Clicking the start button and using ajax to collect some results:</p>
+
+<p><img src="/images/gperf/admin2.jpg"></p>
+
+<p>A view of the list all keys feature.  Some keys are clickable if they contain more details of data to view:</p>
+
+<p><img src="/images/gperf/listkeys.jpg"></p>
+
+<p>A detailed view of a success queue:</p>
+
+<p><img src="/images/gperf/viewqueue.jpg"></p>
+
+<h2>PerformanceRunnerJob Class</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kd">class</span> <span class="nc">PerformanceRunnerJob</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">GrailsApplication</span> <span class="n">grailsApplication</span>
+</span><span class='line'>    <span class="n">RedisService</span> <span class="n">redisService</span>
+</span><span class='line'>    <span class="n">ResultsService</span> <span class="n">resultsService</span>
+</span><span class='line'>    <span class="kt">def</span> <span class="n">executorService</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">def</span> <span class="nf">perform</span><span class="o">(</span><span class="n">jobName</span><span class="o">,</span> <span class="n">workers</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">println</span> <span class="s2">&quot;jesque queueing up job ${jobName} with ${workers} threads&quot;</span>
+</span><span class='line'>        <span class="n">Class</span> <span class="n">clazz</span> <span class="o">=</span> <span class="n">grailsApplication</span><span class="o">.</span><span class="na">config</span><span class="o">?.</span><span class="na">perf</span><span class="o">?.</span><span class="na">runners</span><span class="o">[</span><span class="n">jobName</span><span class="o">]?.</span><span class="na">workerClass</span>
+</span><span class='line'>        <span class="k">if</span><span class="o">(!</span><span class="n">clazz</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">log</span><span class="o">.</span><span class="na">error</span> <span class="s2">&quot;Can not start a performance worker without a workerClass defined in the config attribute&quot;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="n">PerformanceService</span> <span class="n">service</span> <span class="o">=</span> <span class="o">(</span><span class="n">PerformanceService</span><span class="o">)</span> <span class="n">grailsApplication</span><span class="o">.</span><span class="na">mainContext</span><span class="o">.</span><span class="na">getBean</span><span class="o">(</span><span class="n">clazz</span><span class="o">)</span>
+</span><span class='line'>        <span class="n">Integer</span><span class="o">.</span><span class="na">parseInt</span><span class="o">(</span><span class="n">workers</span><span class="o">).</span><span class="na">times</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">runAsync</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">println</span> <span class="s2">&quot;running ${jobName} on thread :: ${Thread.currentThread().id}&quot;</span>
+</span><span class='line'>                <span class="k">while</span><span class="o">(</span><span class="n">redisService</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">jobName</span><span class="o">)</span> <span class="o">==</span> <span class="n">PerformanceConstants</span><span class="o">.</span><span class="na">RUNNING</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">saveResults</span><span class="o">(</span><span class="n">jobName</span><span class="o">,</span> <span class="n">service</span><span class="o">.</span><span class="na">performTest</span><span class="o">())</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">saveResults</span><span class="o">(</span><span class="n">String</span> <span class="n">jobName</span><span class="o">,</span> <span class="n">Result</span> <span class="n">result</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">log</span><span class="o">.</span><span class="na">debug</span> <span class="n">result</span>
+</span><span class='line'>        <span class="n">resultsService</span><span class="o">.</span><span class="na">saveResults</span><span class="o">(</span><span class="n">jobName</span><span class="o">,</span> <span class="n">result</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Christian Oestreich</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-02T14:12:00+00:00" pubdate data-updated="true">Feb 2<span>nd</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/technology/'>Technology</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://www.christianoestreich.com/2012/02/grails-performance-framework/" data-via="ctoestreich" data-counturl="http://www.christianoestreich.com/2012/02/grails-performance-framework/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/2012/01/grails-cxf-client-wsdl2java-changes/" title="Previous Post: Grails Cxf Client 1.2.5 Changes">&laquo; Grails Cxf Client 1.2.5 Changes</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/2012/02/groovy-ast-transformations-part-1/" title="Next Post: Grails Redis Plugin Memoization Annotation Transformation (A Retrospective on Groovy AST)">Grails Redis Plugin Memoization Annotation Transformation (A Retrospective on Groovy AST) &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.christianoestreich.com/2012/02/grails-performance-framework/';
+        var disqus_url = 'http://www.christianoestreich.com/2012/02/grails-performance-framework/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

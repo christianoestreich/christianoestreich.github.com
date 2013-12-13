@@ -1,0 +1,654 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Exploring jQuery UI Widgets - Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="Recently at work I was seeing a pattern with JavaScript that was causing me a
+little concern. Every time someone wanted to do an ajax call on an &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/2011/03/exploring-jquery-ui-widgets/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Exploring jQuery UI Widgets</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-03-07T08:39:03+00:00" pubdate data-updated="true">Mar 7<span>th</span>, 2011</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Recently at work I was seeing a pattern with JavaScript that was causing me a
+little concern.  Every time someone wanted to do an ajax call on an object
+they would write some code using jQuery to load up the object with every call.
+The first attempt to correct this pattern was to create a reusable method that
+we could invoke as needed.  We came up with the following:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">getAjaxJson</span><span class="p">(</span><span class="nx">actionUrl</span><span class="p">,</span> <span class="nx">params</span><span class="p">,</span> <span class="nx">spinDiv</span><span class="p">,</span> <span class="nx">args</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">args</span> <span class="o">=</span> <span class="p">(</span><span class="o">!</span><span class="nx">args</span><span class="p">)</span> <span class="o">?</span> <span class="p">{}</span> <span class="o">:</span> <span class="nx">args</span><span class="p">;</span>
+</span><span class='line'>    <span class="nx">jQuery</span><span class="p">(</span><span class="s1">&#39;#&#39;</span> <span class="o">+</span> <span class="nx">spinDiv</span><span class="p">).</span><span class="nx">show</span><span class="p">();</span>
+</span><span class='line'>    <span class="nx">jQuery</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>        <span class="nx">cache</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">url</span><span class="o">:</span> <span class="nx">actionUrl</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">contentType</span><span class="o">:</span> <span class="s2">&quot;application/json; charset=utf-8&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">dataType</span><span class="o">:</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">data</span><span class="o">:</span> <span class="nx">params</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">error</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">xhr</span><span class="p">,</span> <span class="nx">status</span><span class="p">,</span> <span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">jQuery</span><span class="p">(</span><span class="s1">&#39;#&#39;</span> <span class="o">+</span> <span class="nx">spinDiv</span><span class="p">).</span><span class="nx">hide</span><span class="p">();</span>
+</span><span class='line'>            <span class="k">if</span><span class="p">(</span><span class="nx">args</span><span class="p">.</span><span class="nx">onError</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="nx">args</span><span class="p">.</span><span class="nx">onError</span><span class="p">(</span><span class="nx">xhr</span><span class="p">,</span> <span class="nx">status</span><span class="p">,</span> <span class="nx">error</span><span class="p">);</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>        <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">obj</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">jQuery</span><span class="p">(</span><span class="s1">&#39;#&#39;</span> <span class="o">+</span> <span class="nx">spinDiv</span><span class="p">).</span><span class="nx">hide</span><span class="p">();</span>
+</span><span class='line'>            <span class="k">if</span><span class="p">(</span><span class="nx">obj</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="k">if</span><span class="p">(</span><span class="nx">args</span><span class="p">.</span><span class="nx">onPostBack</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                    <span class="nx">args</span><span class="p">.</span><span class="nx">onPostBack</span><span class="p">(</span><span class="nx">obj</span><span class="p">);</span>
+</span><span class='line'>                <span class="p">}</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This was an okay approach and worked for quite a while but we were still
+having to do things like this all over the site where we wanted to use this
+method:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">spinDiv</span> <span class="o">=</span> <span class="s1">&#39;ajax_spin&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">targetField</span> <span class="o">=</span> <span class="s1">&#39;someField&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="nx">jQuery</span><span class="p">(</span><span class="s1">&#39;#&#39;</span> <span class="o">+</span> <span class="nx">targetField</span><span class="p">).</span><span class="nx">html</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">params</span> <span class="o">=</span> <span class="s2">&quot;foo=bar&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">actionUrl</span> <span class="o">=</span> <span class="s2">&quot;url/url.url&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="nx">getAjaxJson</span><span class="p">(</span><span class="nx">actionUrl</span><span class="p">,</span> <span class="nx">params</span><span class="p">,</span> <span class="nx">spinDiv</span><span class="p">,</span> <span class="p">{</span><span class="nx">onPostBack</span><span class="o">:</span><span class="kd">function</span><span class="p">(</span><span class="nx">obj</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>   <span class="k">if</span><span class="p">(</span><span class="nx">obj</span><span class="p">.</span><span class="nx">fullDescription</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">jQuery</span><span class="p">(</span><span class="s1">&#39;#&#39;</span> <span class="o">+</span> <span class="nx">targetField</span><span class="p">).</span><span class="nx">html</span><span class="p">(</span><span class="nx">obj</span><span class="p">.</span><span class="nx">fullDescription</span><span class="p">);</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'><span class="p">}});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We went on for a year in happy bliss of our new &ldquo;easy&rdquo; approach to get ajax to
+work with our site. None of us were really considered to be UI or UX experts
+on the team and we just kept adding more and more JavaScript to set up ajax on
+a component.</p>
+
+<p>I started drinking the jQuery Kool-Aid a while back and was doing some
+prototyping and trying to find more intricate solutions to help reduce the
+amount of script we had littered across the site.  I had my ah-ha moment while
+doing some research into the <a href="http://docs.jquery.com/UI_Developer_Guide#The_widget_factory" title="jQuery Widgets">jQuery Widget</a> framework.</p>
+
+<p>I wanted to create a widget that would allow us to load content via ajax
+without having to write a lot of additional script code.  I needed a way to be
+able to indicate what url, params and target div to render the content to in
+the event that we want the load of some thing to trigger ajax to be loaded
+into another div.  To solve the first problem I started looking into is
+jQuery&rsquo;s support of the HTML 5 <a href="http://api.jquery.com/data/" title="jQuery Data Attribute Support">data attributes</a>.</p>
+
+<p>By adding items such as <div id="..." **data-controller**="..." **data-
+params**="..." **data-action**="..." **data-target**="..." /> and using the
+jQuery.attr(&ldquo;data-controller&rdquo;) I am able to retrieve the value.  We played
+around with just using the jQuery.data(&ldquo;controller&rdquo;), but jQuery seemed to
+only like to find the data-controller attribute when it was added via the
+jQuery.data(&ldquo;controller&rdquo;,&ldquo;value&rdquo;) (This is something I want to play around
+with more going forward).</p>
+
+<p>The ui.lazyload.js Widget:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">$</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// no logging errors from ie6</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">clickName</span> <span class="o">=</span> <span class="s1">&#39;click.lazyload&#39;</span><span class="p">;</span>
+</span><span class='line'>    <span class="nb">window</span><span class="p">.</span><span class="nx">console</span> <span class="o">||</span> <span class="p">(</span><span class="nx">console</span> <span class="o">=</span> <span class="p">{},</span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{});</span>
+</span><span class='line'>    <span class="nx">$</span><span class="p">.</span><span class="nx">widget</span><span class="p">(</span><span class="s2">&quot;ui.lazyload&quot;</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">_init</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>            <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">,</span> <span class="nx">o</span> <span class="o">=</span> <span class="nx">self</span><span class="p">.</span><span class="nx">options</span><span class="p">,</span> <span class="nx">el</span> <span class="o">=</span> <span class="nx">self</span><span class="p">.</span><span class="nx">element</span><span class="p">,</span> <span class="nx">ops</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">o</span><span class="p">,</span> <span class="nx">url</span><span class="p">,</span> <span class="nx">actn</span><span class="p">,</span> <span class="nx">args</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="k">if</span><span class="p">(</span><span class="nx">url</span> <span class="o">&amp;&amp;</span> <span class="nx">actn</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                    <span class="nx">actn</span> <span class="o">=</span> <span class="p">(</span><span class="o">!</span><span class="nx">args</span><span class="p">)</span> <span class="o">?</span> <span class="nx">actn</span> <span class="o">:</span> <span class="nx">actn</span> <span class="o">+</span> <span class="s2">&quot;&amp;&quot;</span> <span class="o">+</span> <span class="nx">args</span><span class="p">;</span>
+</span><span class='line'>                    <span class="nx">o</span> <span class="o">=</span> <span class="p">(</span><span class="o">!</span><span class="nx">o</span><span class="p">)</span> <span class="o">?</span> <span class="nx">el</span> <span class="o">:</span> <span class="p">(</span><span class="nx">o</span><span class="p">.</span><span class="nx">indexOf</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="s2">&quot;#&quot;</span> <span class="o">+</span> <span class="nx">o</span> <span class="o">:</span> <span class="nx">o</span><span class="p">);</span>
+</span><span class='line'>                    <span class="nx">$</span><span class="p">(</span><span class="nx">o</span><span class="p">).</span><span class="nx">html</span><span class="p">(</span><span class="s2">&quot;loading...&quot;</span><span class="p">);</span>
+</span><span class='line'>                    <span class="k">if</span><span class="p">(</span><span class="nx">ops</span><span class="p">.</span><span class="nx">before</span> <span class="o">&amp;&amp;</span> <span class="nx">$</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">ops</span><span class="p">.</span><span class="nx">before</span><span class="p">))</span> <span class="nb">eval</span><span class="p">(</span><span class="nx">ops</span><span class="p">.</span><span class="nx">before</span><span class="p">());</span>
+</span><span class='line'>                    <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>                        <span class="nx">url</span><span class="o">:</span> <span class="nx">url</span><span class="p">,</span>
+</span><span class='line'>                        <span class="nx">cache</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>                        <span class="nx">dataType</span><span class="o">:</span> <span class="s1">&#39;html&#39;</span><span class="p">,</span>
+</span><span class='line'>                        <span class="nx">data</span><span class="o">:</span> <span class="nx">actn</span><span class="p">,</span>
+</span><span class='line'>                        <span class="nx">error</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">xhr</span><span class="p">,</span> <span class="nx">status</span><span class="p">,</span> <span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                            <span class="nx">$</span><span class="p">(</span><span class="nx">o</span><span class="p">).</span><span class="nx">html</span><span class="p">(</span><span class="s1">&#39;Error processing request.&#39;</span><span class="p">).</span><span class="nx">addClass</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">);</span>
+</span><span class='line'>                            <span class="k">if</span><span class="p">(</span><span class="nx">ops</span><span class="p">.</span><span class="nx">error</span> <span class="o">&amp;&amp;</span> <span class="nx">$</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">ops</span><span class="p">.</span><span class="nx">error</span><span class="p">))</span> <span class="nb">eval</span><span class="p">(</span><span class="nx">ops</span><span class="p">.</span><span class="nx">error</span><span class="p">());</span>
+</span><span class='line'>                        <span class="p">},</span>
+</span><span class='line'>                        <span class="nx">complete</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">html</span><span class="p">){</span>
+</span><span class='line'>                            <span class="k">if</span><span class="p">(</span><span class="nx">ops</span><span class="p">.</span><span class="nx">complete</span> <span class="o">&amp;&amp;</span> <span class="nx">$</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">ops</span><span class="p">.</span><span class="nx">complete</span><span class="p">))</span> <span class="nb">eval</span><span class="p">(</span><span class="nx">ops</span><span class="p">.</span><span class="nx">complete</span><span class="p">());</span>
+</span><span class='line'>                        <span class="p">},</span>
+</span><span class='line'>                        <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">html</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                            <span class="nx">el</span><span class="p">.</span><span class="nx">removeClass</span><span class="p">(</span><span class="s2">&quot;lazy-load&quot;</span><span class="p">).</span><span class="nx">unbind</span><span class="p">(</span><span class="nx">clickName</span><span class="p">);</span>
+</span><span class='line'>                            <span class="nx">$</span><span class="p">(</span><span class="nx">o</span><span class="p">).</span><span class="nx">remove</span><span class="p">(</span><span class="s2">&quot;.loading-img&quot;</span><span class="p">).</span><span class="nx">html</span><span class="p">(</span><span class="nx">html</span><span class="p">);</span>
+</span><span class='line'>                            <span class="k">if</span><span class="p">(</span><span class="nx">ops</span><span class="p">.</span><span class="nx">success</span> <span class="o">&amp;&amp;</span> <span class="nx">$</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">ops</span><span class="p">.</span><span class="nx">success</span><span class="p">))</span> <span class="nb">eval</span><span class="p">(</span><span class="nx">ops</span><span class="p">.</span><span class="nx">success</span><span class="p">());</span>
+</span><span class='line'>                        <span class="p">}</span>
+</span><span class='line'>                    <span class="p">});</span>
+</span><span class='line'>                <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>                    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;You must provide a data-controller and a data-action on the object.&quot;</span><span class="p">)</span>
+</span><span class='line'>                <span class="p">}</span>
+</span><span class='line'>            <span class="p">})(</span><span class="nx">$</span><span class="p">(</span><span class="nx">el</span><span class="p">).</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;data-target&quot;</span><span class="p">),</span> <span class="nx">$</span><span class="p">(</span><span class="nx">el</span><span class="p">).</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;data-controller&quot;</span><span class="p">),</span> <span class="s2">&quot;action=&quot;</span> <span class="o">+</span> <span class="nx">$</span><span class="p">(</span><span class="nx">el</span><span class="p">).</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;data-action&quot;</span><span class="p">),</span> <span class="nx">$</span><span class="p">(</span><span class="nx">el</span><span class="p">).</span><span class="nx">attr</span><span class="p">(</span><span class="s2">&quot;data-params&quot;</span><span class="p">));</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>        <span class="nx">destroy</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">$</span><span class="p">.</span><span class="nx">Widget</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">destroy</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">arguments</span><span class="p">);</span> <span class="c1">// default destroy</span>
+</span><span class='line'>            <span class="c1">// now do other stuff particular to this widget</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>    <span class="nx">$</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;.lazy-load&#39;</span><span class="p">).</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">$</span><span class="p">(</span><span class="nx">sec</span><span class="p">).</span><span class="nx">lazyload</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">});</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'><span class="p">})(</span><span class="nx">jQuery</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This basically takes any item with a class of &ldquo;lazy-load&rdquo; and attempts to load
+the content via ajax.  The only requirement is that you define the data
+objects in the html tag such as the following:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;one&quot;</span> <span class="na">class=</span><span class="s">&quot;lazy-load&quot;</span>
+</span><span class='line'>     <span class="na">data-controller=</span><span class="s">&quot;/url/url.url&quot;</span>
+</span><span class='line'>     <span class="na">data-action=</span><span class="s">&quot;doWork&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;two&quot;</span>
+</span><span class='line'>     <span class="na">data-controller=</span><span class="s">&quot;/url/url.url&quot;</span>
+</span><span class='line'>     <span class="na">data-action=</span><span class="s">&quot;doMoreWork&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Since we use Spring MVC we are invoking our urls like the  following
+/url/url.url?action=doWork.  This could all be combined into the data-
+controller attribute, but for clarity of invocation we split them up as
+separate items.  The target of &ldquo;this&rdquo; is assumed if the data-target isn&rsquo;t
+provided.  If we needed to add params to the ajax call we could add a data-
+params=&ldquo;foo=bar&rdquo; and the resulting url would be invoked as
+/url/url.url?action=doWork&amp;foo=bar where foo=bar is passed to the jQuery ajax
+method in the data parameter.</p>
+
+<p>We modified our JSTL tags to take the 4 new params to set.  Getting content
+wired up to load via ajax requires the users to no longer write any JavaScript
+code, just simply define the parameters and invoke .lazyload().  Of course
+there are special cases in which eventing is required so I went back and added
+support for the following:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#one&quot;</span><span class="p">).</span><span class="nx">lazyload</span><span class="p">({</span><span class="nx">before</span><span class="o">:</span> <span class="p">[</span><span class="kd">function</span><span class="p">],</span> <span class="nx">complete</span><span class="o">:</span> <span class="p">[</span><span class="kd">function</span><span class="p">],</span> <span class="nx">success</span><span class="o">:</span> <span class="p">[</span><span class="kd">function</span><span class="p">],</span> <span class="nx">error</span><span class="o">:</span> <span class="p">[</span><span class="kd">function</span><span class="p">]});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>before </strong>&ndash; execute the [function] before calling the ajax method on the
+object <strong>complete </strong>&ndash; execute the [function] after calling the ajax method on
+the object regardless of status <strong>success </strong>&ndash; execute the [function] after
+calling the ajax method on the object on success <strong>error </strong>&ndash; execute the
+[function] after calling the ajax method on the object on error</p>
+
+<p>Also if people really want to customize how the item loads they could skip
+adding the class of lazy-load and the ajax call will not happen on load.
+Instead they can do something like:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#one&quot;</span><span class="p">).</span><span class="nx">bind</span><span class="p">(</span><span class="s1">&#39;click.lazyload&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;one&quot;</span><span class="p">).</span><span class="nx">lazyload</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This will bind a click event with a name-space of lazy-load (which will be
+auto unbound after click via widget) to the object with id=&ldquo;one&rdquo;.  I wanted to
+unbind the click event so I used the name-space, but if the user were to
+simply bind(&lsquo;click&rsquo;,&hellip;); instead, it would not unbind the event and the ajax
+would get invoked on every click.</p>
+
+<p>When we are crossing multiple object boundaries and controls we have to be
+conscious as to which object we add the data attributes to and which objects
+have events that invoke the lazy-load.  The object with the .lazyload()
+invoked must have the data attributes on it.  You can bind an even to another
+object, but it will not get unbound unless you added support for that via the
+complete event.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">//Untested code</span>
+</span><span class='line'><span class="nx">$</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#two&quot;</span><span class="p">).</span><span class="nx">bind</span><span class="p">(</span><span class="s1">&#39;click.lazyload&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;one&quot;</span><span class="p">).</span><span class="nx">lazyload</span><span class="p">({</span><span class="nx">complete</span><span class="o">:</span><span class="kd">function</span><span class="p">(){</span><span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#two&quot;</span><span class="p">).</span><span class="nx">unbind</span><span class="p">(</span><span class="s1">&#39;click.lazyload&#39;</span><span class="p">);}});</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That code would lazy-load id=&ldquo;one&rdquo; when clicking on id=&ldquo;two&rdquo; and unbind the
+click event after complete.  Perhaps using the before event would be better to
+stop the multiple invocation of the ajax get.</p>
+
+<p>I have learned a lot and am actively re-writing all our copy-paste JavaScript
+where we do the same thing in multiple places.  I will post more as I create
+them and hopefully they can be leveraged or rewritten to support your needs.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">ctoestreich</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-03-07T08:39:03+00:00" pubdate data-updated="true">Mar 7<span>th</span>, 2011</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/technology/'>Technology</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://www.christianoestreich.com/2011/03/exploring-jquery-ui-widgets/" data-via="ctoestreich" data-counturl="http://www.christianoestreich.com/2011/03/exploring-jquery-ui-widgets/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/2010/10/lift-beans-lists-oh-my/" title="Previous Post: Lift & Beans & Lists... OH MY!">&laquo; Lift & Beans & Lists... OH MY!</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/2011/03/page-masking-with-jquery/" title="Next Post: Page Masking With jQuery">Page Masking With jQuery &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.christianoestreich.com/2011/03/exploring-jquery-ui-widgets/';
+        var disqus_url = 'http://www.christianoestreich.com/2011/03/exploring-jquery-ui-widgets/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

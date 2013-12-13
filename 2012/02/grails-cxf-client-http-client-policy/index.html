@@ -1,0 +1,473 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Grails Cxf Client 1.2.7 Released - Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="The Grails cxf-client plugin has been updated to version 1.2.7. I have added the ability to specify timeouts (connection and receive) and allow &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/2012/02/grails-cxf-client-http-client-policy/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Grails Cxf Client 1.2.7 Released</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-15T15:00:00+00:00" pubdate data-updated="true">Feb 15<span>th</span>, 2012</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>The <a href="http://www.grails.org/plugin/cxf-client" title="Grails Cxf Client Plugin">Grails cxf-client plugin</a> has been updated to version 1.2.7.  I have added the ability to specify timeouts (connection and receive) and allow chunking separately through params and also provided another parameter to pass the client name of an HTTPClientPolicy bean to use instead of setting the params seperately.</p>
+
+<!-- more -->
+
+
+<h4>Updated Parameter Documentation</h4>
+
+<p>The following partial documentation is available in full at <a href="https://github.com/Grails-Plugin-Consortium/grails-cxf-client">https://github.com/Grails-Plugin-Consortium/grails-cxf-client</a></p>
+
+<table>
+<thead>
+<tr>
+<th align="left">Property</th>
+<th align="left">Description</th>
+<th align="left">Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">connectionTimeout</td>
+<td align="left">Specifies the amount of time, in milliseconds, that the client will attempt to establish a connection before it times out. The default is 30000 (30 seconds). 0 specifies that the client will continue to attempt to open a connection indefinitely. (default: 30000)</td>
+<td align="left">No</td>
+</tr>
+<tr>
+<td align="left">receiveTimeout</td>
+<td align="left">Specifies the amount of time, in milliseconds, that the client will wait for a response before it times out. The default is 60000. 0 specifies that the client will wait indefinitely. (default: 60000)</td>
+<td align="left">No</td>
+</tr>
+<tr>
+<td align="left">allowChunking</td>
+<td align="left">If true will set the HTTPClientPolicy allowChunking for the clients proxy to true. (default: false)</td>
+<td align="left">No</td>
+</tr>
+<tr>
+<td align="left">httpClientPolicy</td>
+<td align="left">Instead of using the seperate timeout, chunking, etc values you can create your own HTTPClientPolicy bean in resources.groovy and pass the name of the bean here. <B>This will override the connectionTimeout, receiveTimeout and allowChunking values.</b> (default: null)</td>
+<td align="left">No</td>
+</tr>
+</tbody>
+</table>
+
+
+<h4>Timeout And Chunking Parameters</h4>
+
+<p>Here is an example cxf client configuration block using the connectionTimeout, receiveTimeout and allowChunking parameters:</p>
+
+<figure class='code'><figcaption><span>Config.groovy </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">cxf</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">installDir</span> <span class="o">=</span> <span class="s2">&quot;C:/apps/apache-cxf-2.4.2&quot;</span> <span class="c1">//only used for wsdl2java script target</span>
+</span><span class='line'>    <span class="n">client</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">simpleServiceClient</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">wsdl</span> <span class="o">=</span> <span class="s2">&quot;docs/SimpleService.wsdl&quot;</span> <span class="c1">//only used for wsdl2java script target</span>
+</span><span class='line'>            <span class="n">wsdlArgs</span> <span class="o">=</span> <span class="s2">&quot;-autoNameResolution&quot;</span>
+</span><span class='line'>            <span class="n">clientInterface</span> <span class="o">=</span> <span class="n">cxf</span><span class="o">.</span><span class="na">client</span><span class="o">.</span><span class="na">demo</span><span class="o">.</span><span class="na">simple</span><span class="o">.</span><span class="na">SimpleServicePortType</span>
+</span><span class='line'>            <span class="n">serviceEndpointAddress</span> <span class="o">=</span> <span class="s2">&quot;${service.simple.url}&quot;</span>
+</span><span class='line'>            <span class="n">namespace</span> <span class="o">=</span> <span class="s2">&quot;cxf.client.demo.simple&quot;</span>
+</span><span class='line'>            <span class="n">receiveTimeout</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1">//no timeout</span>
+</span><span class='line'>            <span class="n">connectionTimeout</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1">//no timeout</span>
+</span><span class='line'>            <span class="n">allowChunking</span> <span class="o">=</span> <span class="kc">false</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>HTTPClientPolicy Parameter</h4>
+
+<p>Here is an example cxf client configuration block using the httpClientPolicy config parameter:</p>
+
+<figure class='code'><figcaption><span>resources.groovy </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">beans</span> <span class="o">=</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">customHttpClientPolicy</span><span class="o">(</span><span class="n">HTTPClientPolicy</span><span class="o">){</span>
+</span><span class='line'>        <span class="n">connectionTimeout</span> <span class="o">=</span> <span class="mi">30000</span>
+</span><span class='line'>        <span class="n">receiveTimeout</span> <span class="o">=</span> <span class="mi">60000</span>
+</span><span class='line'>        <span class="n">allowChunking</span> <span class="o">=</span> <span class="kc">false</span>
+</span><span class='line'>        <span class="n">autoRedirect</span> <span class="o">=</span> <span class="kc">false</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Config.groovy </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">cxf</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">installDir</span> <span class="o">=</span> <span class="s2">&quot;C:/apps/apache-cxf-2.4.2&quot;</span> <span class="c1">//only used for wsdl2java script target</span>
+</span><span class='line'>    <span class="n">client</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">simpleServiceClient</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">clientInterface</span> <span class="o">=</span> <span class="n">cxf</span><span class="o">.</span><span class="na">client</span><span class="o">.</span><span class="na">demo</span><span class="o">.</span><span class="na">simple</span><span class="o">.</span><span class="na">SimpleServicePortType</span>
+</span><span class='line'>            <span class="n">serviceEndpointAddress</span> <span class="o">=</span> <span class="s2">&quot;${service.simple.url}&quot;</span>
+</span><span class='line'>            <span class="n">httpClientPolicy</span> <span class="o">=</span> <span class="s1">&#39;customHttpClientPolicy&#39;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Christian Oestreich</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-15T15:00:00+00:00" pubdate data-updated="true">Feb 15<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/grails/'>Grails</a>, <a class='category' href='/blog/categories/groovy/'>Groovy</a>, <a class='category' href='/blog/categories/technology/'>Technology</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://www.christianoestreich.com/2012/02/grails-cxf-client-http-client-policy/" data-via="ctoestreich" data-counturl="http://www.christianoestreich.com/2012/02/grails-cxf-client-http-client-policy/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/2012/02/groovy-ast-transformations-part-1/" title="Previous Post: Grails Redis Plugin Memoization Annotation Transformation (A Retrospective on Groovy AST)">&laquo; Grails Redis Plugin Memoization Annotation Transformation (A Retrospective on Groovy AST)</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/2012/02/grails-cxf-client-http-client-policy.markdown/" title="Next Post: Grails Cxf Client 1.2.7 Released">Grails Cxf Client 1.2.7 Released &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.christianoestreich.com/2012/02/grails-cxf-client-http-client-policy/';
+        var disqus_url = 'http://www.christianoestreich.com/2012/02/grails-cxf-client-http-client-policy/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

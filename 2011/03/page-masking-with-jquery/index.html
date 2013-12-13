@@ -1,0 +1,560 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Page Masking With jQuery - Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="As I mentioned in my last post we are trying to move to jQuery as a
+scripting solution over ExtJS or straight JavaScript.  When we wrote our &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/2011/03/page-masking-with-jquery/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Page Masking With jQuery</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-03-09T10:01:08+00:00" pubdate data-updated="true">Mar 9<span>th</span>, 2011</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>As I mentioned in my last post we are trying to move to <a href="http://www.jquery.com" title="jquery">jQuery</a> as a
+scripting solution over ExtJS or straight JavaScript.  When we wrote our
+application we were using ExtJS to do a mask on the page during a form
+submission so the user could have some useful feedback as to what was
+happening.</p>
+
+<p>Here is the code that we wrote to do page masking.  In the form tag we simply
+put an onsubmit=&ldquo;doLoadingMask()&rdquo; and the mask is rendered to the page into
+the div with id=&ldquo;loading-mask&rdquo; that wraps all of the page content.  This stops
+the user from trying to click around and lets them know that something really
+happened when they clicked the button as not all users look to the browser
+icons spinning or status bar for details.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">doLoadingMask</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">doLoadingMaskText</span><span class="p">(</span><span class="s1">&#39;Loading...&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">function</span> <span class="nx">doLoadingMaskText</span><span class="p">(</span><span class="nx">loadingText</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">Ext</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;loading-mask&quot;</span><span class="p">).</span><span class="nx">mask</span><span class="p">(</span><span class="nx">loadingText</span><span class="p">,</span> <span class="s1">&#39;x-mask-loading&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We ran into a problem that occurred very infrequent that would cause the form
+submit to hang for a long time&hellip; or indefinitely.  With the mask remaining on
+the screen the entire time and having the user blocked from interacting with
+the page, this was a problem.  So I rewrote the code to be &ldquo;error/timeout&rdquo;
+friendly in that it disappears after 30 seconds and the user can either
+reattempt the action of leave the page and come back.  The 30 second timeout
+does not stop the form submission from attempting to continue so given they
+leave it alone long enough it still might complete after the mask disappears.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">doLoadingMask</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">doLoadingMaskText</span><span class="p">(</span><span class="s1">&#39;Loading...&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">var</span> <span class="nx">maskInterval</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">maskTimeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">maskLoop</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">function</span> <span class="nx">doLoadingMaskText</span><span class="p">(</span><span class="nx">loadingText</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">Ext</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;loading-mask&quot;</span><span class="p">).</span><span class="nx">mask</span><span class="p">(</span><span class="nx">loadingText</span><span class="p">,</span> <span class="s1">&#39;x-mask-loading&#39;</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">maskLoop</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="nx">maskInterval</span> <span class="o">=</span> <span class="nb">window</span><span class="p">.</span><span class="nx">setInterval</span><span class="p">(</span><span class="nx">maskUpdater</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">function</span> <span class="nx">undoLoadingMask</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">Ext</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;loading-mask&quot;</span><span class="p">).</span><span class="nx">unmask</span><span class="p">();</span>
+</span><span class='line'>    <span class="nx">clearInterval</span><span class="p">(</span><span class="nx">maskInterval</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">function</span> <span class="nx">maskUpdater</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="nx">maskLoop</span> <span class="o">&gt;=</span> <span class="nx">maskTimeout</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">undoLoadingMask</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span><span class="p">(</span><span class="nx">maskLoop</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">===</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">Ext</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;loading-mask&quot;</span><span class="p">).</span><span class="nx">mask</span><span class="p">(</span><span class="s2">&quot;Waiting... &quot;</span> <span class="o">+</span> <span class="p">(</span><span class="nx">maskTimeout</span> <span class="o">-</span> <span class="nx">maskLoop</span><span class="p">),</span> <span class="s1">&#39;x-mask-loading&#39;</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="nx">maskLoop</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This simply adds a 1 second interval call to invoke the maskUpdater and when
+the timeout is reached it just unloads the mask.  It also updates the mask
+with a &ldquo;Waiting&hellip; [time]&rdquo; every 5 seconds.</p>
+
+<p>This solved the &ldquo;infinite&rdquo; mask problem and was, IMHO, a pretty simple
+solution.  After looking at the overall size of our ExtJS vs jQuery base +
+extensions, it was immediately clear that we wanted to get rid of as much of
+ExtJS as possible.  The 175k min file ext-all isn&rsquo;t even the whole ExtJS
+library.  It is only the components we are using while the jQuery is the full
+caboodle.  The partial archaic file names are due to us using a JavaScript
+file compressor.</p>
+
+<p><a href="http://www.christianoestreich.com/2011/03/page-masking-with-jquery/js_size/"><img src="http://www.christianoestreich.com/wp-content/uploads/2011/03/js_size.png" title="Javascript File Size" alt="" /></a></p>
+
+<p>Every time I come across code written in ExtJS I rewrite it in jQuery.  Here
+is the same code as above using jQuery and jQuery UI to accomplish the same
+thing. We use a slightly different setup for the div as it doesn&rsquo;t have to
+encompass the while page content. I just put this after the body tag</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;loadingMask&quot;</span> <span class="na">style=</span><span class="s">&quot;display:none&quot;</span><span class="nt">&gt;&lt;p</span> <span class="na">align=</span><span class="s">&quot;center&quot;</span><span class="nt">&gt;&lt;img</span> <span class="na">src=</span><span class="s">&quot;/icue/images/loading.gif&quot;</span><span class="nt">&gt;</span><span class="ni">&amp;nbsp;</span><span class="nt">&lt;span</span> <span class="na">id=</span><span class="s">&quot;message&quot;</span><span class="nt">&gt;</span>submitting data...<span class="nt">&lt;/span&gt;&lt;/p&gt;&lt;/div&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>with this JavaScript</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'>        <span class="kd">var</span> <span class="nx">maskInterval</span><span class="p">;</span>
+</span><span class='line'>        <span class="kd">var</span> <span class="nx">maskTimeout</span> <span class="o">=</span> <span class="mi">30</span><span class="p">;</span>
+</span><span class='line'>        <span class="kd">var</span> <span class="nx">maskLoop</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>        <span class="kd">function</span> <span class="nx">maskUpdater</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">if</span><span class="p">(</span><span class="nx">maskLoop</span> <span class="o">&gt;=</span> <span class="nx">maskTimeout</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="nx">undoLoadingMask</span><span class="p">();</span>
+</span><span class='line'>            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>                <span class="k">if</span><span class="p">(</span><span class="nx">maskLoop</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">===</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                    <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#loadingMask&quot;</span><span class="p">).</span><span class="nx">find</span><span class="p">(</span><span class="s2">&quot;#message&quot;</span><span class="p">).</span><span class="nx">html</span><span class="p">(</span><span class="s2">&quot;waiting... &quot;</span> <span class="o">+</span> <span class="p">(</span><span class="nx">maskTimeout</span> <span class="o">-</span> <span class="nx">maskLoop</span><span class="p">));</span>
+</span><span class='line'>                <span class="p">}</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="nx">maskLoop</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">function</span> <span class="nx">doLoadingMask</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#loadingMask&quot;</span><span class="p">).</span><span class="nx">dialog</span><span class="p">({</span>
+</span><span class='line'>                <span class="nx">modal</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>                <span class="nx">width</span><span class="o">:</span> <span class="mi">200</span><span class="p">,</span>
+</span><span class='line'>                <span class="nx">height</span><span class="o">:</span> <span class="mi">110</span><span class="p">,</span>
+</span><span class='line'>                <span class="nx">position</span><span class="o">:</span> <span class="p">[(</span><span class="nb">window</span><span class="p">.</span><span class="nx">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span><span class="mi">100</span><span class="p">],</span>
+</span><span class='line'>                <span class="nx">closeOnEscape</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+</span><span class='line'>                <span class="nx">resizable</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+</span><span class='line'>                <span class="nx">open</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="nx">ui</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                    <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;.ui-dialog-titlebar-close&quot;</span><span class="p">).</span><span class="nx">hide</span><span class="p">();</span>
+</span><span class='line'>                    <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;.ui-dialog-titlebar&quot;</span><span class="p">).</span><span class="nx">hide</span><span class="p">();</span>
+</span><span class='line'>                    <span class="nx">maskLoop</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>                    <span class="nx">maskInterval</span> <span class="o">=</span> <span class="nx">setInterval</span><span class="p">(</span><span class="nx">maskUpdater</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
+</span><span class='line'>                <span class="p">}</span>
+</span><span class='line'>            <span class="p">});</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">function</span> <span class="nx">undoLoadingMask</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">clearInterval</span><span class="p">(</span><span class="nx">maskInterval</span><span class="p">);</span>
+</span><span class='line'>            <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#loadingMask&quot;</span><span class="p">).</span><span class="nx">dialog</span><span class="p">(</span><span class="s2">&quot;close&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The setup for the dialog is a little more lengthy than the ExtJS version, but
+we have more control around the look and feel of the message box.  The open
+event override is setting the timer and also hiding the title and close bars.</p>
+
+<p>For this jQuery to work you will need to include both jQuery base and the UI
+javascript with at least the dialog and base ui in it.</p>
+
+<p>The old mask (content blacked/grayed out for security reasons)</p>
+
+<p><a href="http://www.christianoestreich.com/2011/03/page-masking-with-jquery/js_oldmask/"><img src="http://www.christianoestreich.com/wp-content/uploads/2011/03/js_oldmask.png" title="Old Mask" alt="" /></a>The new mask both off and on</p>
+
+<p><a href="http://www.christianoestreich.com/2011/03/page-masking-with-jquery/js_maskoff/"><img src="http://www.christianoestreich.com/wp-content/uploads/2011/03/js_maskoff.png" title="Mask Off" alt="" /></a></p>
+
+<p><a href="http://www.christianoestreich.com/wp-content/uploads/2011/03/js_maskon.png"><img src="http://www.christianoestreich.com/wp-content/uploads/2011/03/js_maskon.png" title="Mask On" alt="" /></a></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">ctoestreich</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-03-09T10:01:08+00:00" pubdate data-updated="true">Mar 9<span>th</span>, 2011</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/technology/'>Technology</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://www.christianoestreich.com/2011/03/page-masking-with-jquery/" data-via="ctoestreich" data-counturl="http://www.christianoestreich.com/2011/03/page-masking-with-jquery/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/2011/03/exploring-jquery-ui-widgets/" title="Previous Post: Exploring jQuery UI Widgets">&laquo; Exploring jQuery UI Widgets</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/2011/03/jquery-page-timeout-widget/" title="Next Post: jQuery Timeout Dialog Widget">jQuery Timeout Dialog Widget &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.christianoestreich.com/2011/03/page-masking-with-jquery/';
+        var disqus_url = 'http://www.christianoestreich.com/2011/03/page-masking-with-jquery/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

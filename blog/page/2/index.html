@@ -1,0 +1,739 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="The [Grails cxf-client plugin][1] has been updated to version 1.2.9. When I first deployed the plugin I overlooked allowing checked exceptions and &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/blog/page/2/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2012/03/grails-cxf-client-soap-exceptions.markdown/">Grails Cxf Client 1.2.9 Released</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-03-01T12:00:00+00:00" pubdate data-updated="true">Mar 1<span>st</span>, 2012</time>
+        
+         | <a href="/2012/03/grails-cxf-client-soap-exceptions.markdown/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content">The [Grails cxf-client plugin][1] has been updated to version 1.2.9.  When I first deployed the plugin I overlooked allowing checked exceptions and soap faults to bubble out of the client proxy appropriately.  I modified the plugin to allow this now.  In addition I added a configuration parameter for proxyFactoryBindingId to allow soap 1.2 (set to &#8220;http://schemas.xmlsoap.org/wsdl/soap12/&#8221;).
+
+#### Updated Parameter Documentation ####
+
+The following partial documentation is available in full at [https://github.com/Grails-Plugin-Consortium/cxf-client][2]
+
+Property|Description|Required
+:&#8212;&#8212;&#8212;&#8211;|:&#8212;&#8212;&#8212;&#8212;|:&#8212;&#8212;&#8212;&#8212;
+proxyFactoryBindingId|The URI, or ID, of the message binding for the endpoint to use. For SOAP the binding URI(ID) is specified by the JAX-WS specification. For other message bindings the URI is the namespace of the WSDL extensions used to specify the binding. If you would like to change the binding (to use soap12 for example) set this value to &#8220;http://schemas.xmlsoap.org/wsdl/soap12/&#8221;. (default: &#8220;&#8221;)|No
+
+[1]: http://www.grails.org/plugin/cxf-client (Grails Cxf Client Plugin)
+[2]: https://github.com/Grails-Plugin-Consortium/cxf-client</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2012/03/grails-cxf-client-soap-exceptions/">Grails Cxf Client 1.2.9 Released</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-03-01T12:00:00+00:00" pubdate data-updated="true">Mar 1<span>st</span>, 2012</time>
+        
+         | <a href="/2012/03/grails-cxf-client-soap-exceptions/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>The <a href="http://www.grails.org/plugin/cxf-client" title="Grails Cxf Client Plugin">Grails cxf-client plugin</a> has been updated to version 1.2.9.  When I first deployed the plugin I overlooked allowing checked exceptions and soap faults to bubble out of the client proxy appropriately.  I modified the plugin to allow this now.  In addition I added a configuration parameter for proxyFactoryBindingId to allow soap 1.2 (set to &ldquo;<a href="http://schemas.xmlsoap.org/wsdl/soap12/">http://schemas.xmlsoap.org/wsdl/soap12/</a>&rdquo;).</p>
+
+<h4>Updated Parameter Documentation</h4>
+
+<p>The following partial documentation is available in full at <a href="https://github.com/Grails-Plugin-Consortium/grails-cxf-client">https://github.com/Grails-Plugin-Consortium/grails-cxf-client</a></p>
+
+<table>
+<thead>
+<tr>
+<th align="left">Property</th>
+<th align="left">Description</th>
+<th align="left">Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">proxyFactoryBindingId</td>
+<td align="left">The URI, or ID, of the message binding for the endpoint to use. For SOAP the binding URI(ID) is specified by the JAX-WS specification. For other message bindings the URI is the namespace of the WSDL extensions used to specify the binding. If you would like to change the binding (to use soap12 for example) set this value to &ldquo;<a href="http://schemas.xmlsoap.org/wsdl/soap12/">http://schemas.xmlsoap.org/wsdl/soap12/</a>&rdquo;. (default: &ldquo;&rdquo;)</td>
+<td align="left">No</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2012/02/grails-script-docs-helper/">Grails Docs Helper Script</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-24T15:00:00+00:00" pubdate data-updated="true">Feb 24<span>th</span>, 2012</time>
+        
+         | <a href="/2012/02/grails-script-docs-helper/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I am creating a hello world grails project for internal use here at our company.  The project encapsulates both the source code and the documentation in gdoc format.  When a new user comes onboard, they get the project from the source repository and then run the <code>grails doc</code> target to generate the guide locally with a tutorial on building a simple application.  In the project I have already included a full test suite that should pass when the tutorial is completed.</p>
+
+<p>I needed a way to have my version control ignored domain, service, and controllers that I was using be added in a way that kept them out of the base grails-app directory so the user could generate them.  At the same time I really wanted to put a link to what the finished classes would look like in the docs somewhere to help users along during the process if needed.  During this process I only wanted to have one master file and not have to maintain the code blocks in the gdoc files separately from actual code.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/2012/02/grails-script-docs-helper/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2012/02/grails-cxf-client-http-client-policy.markdown/">Grails Cxf Client 1.2.7 Released</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-15T15:00:00+00:00" pubdate data-updated="true">Feb 15<span>th</span>, 2012</time>
+        
+         | <a href="/2012/02/grails-cxf-client-http-client-policy.markdown/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content">The [Grails cxf-client plugin][1] has been updated to version 1.2.7.  I have added the ability to specify timeouts (connection and receive) and allow chunking separately through params and also provided another parameter to pass the client name of an HTTPClientPolicy bean to use instead of setting the params seperately.
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/2012/02/grails-cxf-client-http-client-policy.markdown/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2012/02/grails-cxf-client-http-client-policy/">Grails Cxf Client 1.2.7 Released</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-15T15:00:00+00:00" pubdate data-updated="true">Feb 15<span>th</span>, 2012</time>
+        
+         | <a href="/2012/02/grails-cxf-client-http-client-policy/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>The <a href="http://www.grails.org/plugin/cxf-client" title="Grails Cxf Client Plugin">Grails cxf-client plugin</a> has been updated to version 1.2.7.  I have added the ability to specify timeouts (connection and receive) and allow chunking separately through params and also provided another parameter to pass the client name of an HTTPClientPolicy bean to use instead of setting the params seperately.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/2012/02/grails-cxf-client-http-client-policy/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2012/02/groovy-ast-transformations-part-1/">Grails Redis Plugin Memoization Annotation Transformation (a Retrospective on Groovy AST)</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-03T17:00:00+00:00" pubdate data-updated="true">Feb 3<span>rd</span>, 2012</time>
+        
+         | <a href="/2012/02/groovy-ast-transformations-part-1/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Recently while developing a prototype application for performance testing using <a href="http://www.grails.org/plugin/redis" title="Redis Plugin">redis</a> and <a href="http://www.grails.org/plugin/jesque" title="Jesque Plugin">jesque</a> (see <a href="http://www.christianoestreich.com/2012/02/grails-performance-framework/" title="My Blog">post</a>) I got to thinking &ldquo;why doesn&rsquo;t the grails redis plugin currently have support for annotation based memoization like spring cache?&rdquo;  I figured I would set out to add that support and learn to write <a href="http://groovy.codehaus.org/Compile-time+Metaprogramming+-+AST+Transformations" title="Groovy AST">Groovy AST Transformations</a> at the same time.  The process was long and arduous and I learned a lot during my several weeks of coding.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/2012/02/groovy-ast-transformations-part-1/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2012/02/grails-performance-framework/">Grails Performance Framework</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-02T14:12:00+00:00" pubdate data-updated="true">Feb 2<span>nd</span>, 2012</time>
+        
+         | <a href="/2012/02/grails-performance-framework/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I built a <em>relatively</em> simple framework to do performance testing of code using <a href="http://www.grails.org/plugin/redis" title="Redis Plugin">redis</a>, <a href="http://www.grails.org/plugin/jesque" title="Jesque Plugin">jesque</a> and <a href="http://www.grails.org/plugin/executor" title="Executor Plugin">executor</a>.  It uses some jQuery and ajax on the front end and provides a relatively simple administrative UI.  The code is currently availabe on <a href="https://github.com/ctoestreich/gperf" title="GPERF Framework">github</a>.  The overhead of the perf runner is relatively light and extremely fast as it is using <a href="http://www.grails.org/plugin/redis" title="Redis Plugin">redis</a> as its storage mechanism for queues, jobs, statistics, and status.  If you would like to change where or how the results are saved you could certainly hack the code in the ResultsService.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/2012/02/grails-performance-framework/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2012/01/grails-cxf-client-wsdl2java-changes/">Grails Cxf Client 1.2.5 Changes</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-01-10T10:17:00+00:00" pubdate data-updated="true">Jan 10<span>th</span>, 2012</time>
+        
+         | <a href="/2012/01/grails-cxf-client-wsdl2java-changes/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Based on a user request, I have added the ability to pass the wsdl2java script a wsdlArgs param in which you can use to pass custom args into the client creation process.  I have also modified the name of the <strong>bindingFile</strong> parameter as the name <strong>binding</strong> was in conflict with groovy reserved keywords.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/2012/01/grails-cxf-client-wsdl2java-changes/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2012/01/moving-to-octopress/">Moving to Octopress</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-01-03T16:30:00+00:00" pubdate data-updated="true">Jan 3<span>rd</span>, 2012</time>
+        
+         | <a href="/2012/01/moving-to-octopress/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I am currently in the process of porting all the blog posts to <a href="http://www.octopress.org">Octopress</a>.  This is a WIP and I will try and get all the content updated ASAP.</p>
+
+<p>Thanks!</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <!-- Now we're back to normal posts. Note the links used under href in both headers.-->
+        <h1 class="entry-title"><a href="/2011/12/grails-cxf-client-custom-interceptors.markdown/">Grails Cxf Client 1.2.3 Released</a></h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2011-12-13T13:58:55+00:00" pubdate data-updated="true">Dec 13<span>th</span>, 2011</time>
+        
+         | <a href="/2011/12/grails-cxf-client-custom-interceptors.markdown/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content">Based on a request from a user to add user defined logging and fault
+interceptors, I have enhanced the [Grails cxf-client plugin][1]. I have
+included these features in the new release version 1.2.3.
+
+In the previous version (1.2.2) of the plugin I added the ability to override
+the security interceptor. This was done to allow users to diverge from using
+the standard WSS4J interceptor that I bundled with the plugin. I accomplished
+this by adding an single out interceptor to the cxf client proxy.
+
+In the latest version I have taken the interceptor injection one step further
+and allowed users to configure any number of in, out or fault out interceptors
+they want to add to the interceptor chain.  In addition I have provided a flag
+to turn on or off the default logging in and out interceptors that I am auto
+injecting for the users.
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/2011/12/grails-cxf-client-custom-interceptors.markdown/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+      <a class="prev" href="/blog/page/3/">&larr; Older</a>
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+    <a class="next" href="/">Newer &rarr;</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        var disqus_script = 'count.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

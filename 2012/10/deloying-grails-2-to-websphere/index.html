@@ -1,0 +1,629 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Grails 2.x Deployed To Websphere 7ish - Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="I have struggled a lot with getting our corporate-standard WebSphere container to play nicely with Grails in the past and when we moved to Grails 2.1 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/2012/10/deloying-grails-2-to-websphere/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Grails 2.x Deployed to Websphere 7ish</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-10-20T12:00:00+00:00" pubdate data-updated="true">Oct 20<span>th</span>, 2012</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>I have struggled a lot with getting our corporate-standard WebSphere container to play nicely with Grails in the past and when we moved to Grails 2.1.1 and WebSphere 7.0 it was no different.</p>
+
+<!-- more -->
+
+
+<h4>EAR Script</h4>
+
+<p>The first thing you will want to do is add the Ear script to your project under <code>scripts</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">includeTargets</span> <span class="o">&lt;&lt;</span> <span class="n">grailsScript</span><span class="o">(</span><span class="s2">&quot;_GrailsWar&quot;</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">target</span><span class="o">(</span><span class="nl">ear:</span> <span class="s2">&quot;Creates an EAR file from a Grails WAR&quot;</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>  <span class="n">war</span><span class="o">()</span>
+</span><span class='line'>  <span class="n">event</span><span class="o">(</span><span class="s2">&quot;StatusUpdate&quot;</span><span class="o">,</span> <span class="o">[</span><span class="s2">&quot;Building EAR file&quot;</span><span class="o">])</span>
+</span><span class='line'>  <span class="n">generateApplicationXml</span><span class="o">()</span>
+</span><span class='line'>  <span class="kt">def</span> <span class="n">warDest</span> <span class="o">=</span> <span class="k">new</span> <span class="n">File</span><span class="o">(</span><span class="n">warName</span><span class="o">).</span><span class="na">parentFile</span>
+</span><span class='line'>  <span class="kt">def</span> <span class="n">appVersion</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="na">getApplicationVersion</span><span class="o">()</span>
+</span><span class='line'>  <span class="kt">def</span> <span class="n">earFile</span> <span class="o">=</span> <span class="s2">&quot;${projectTargetDir}/${contextRoot}-${appVersion}.ear&quot;</span>
+</span><span class='line'>  <span class="n">ant</span><span class="o">.</span><span class="na">ear</span><span class="o">(</span><span class="nl">destfile:</span> <span class="n">earFile</span><span class="o">,</span> <span class="nl">appxml:</span> <span class="n">appXml</span><span class="o">,</span> <span class="nl">update:</span> <span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">fileset</span><span class="o">(</span><span class="nl">dir:</span> <span class="n">warDest</span><span class="o">,</span> <span class="nl">includes:</span> <span class="s2">&quot;*.war&quot;</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  <span class="n">event</span><span class="o">(</span><span class="s2">&quot;StatusFinal&quot;</span><span class="o">,</span> <span class="o">[</span><span class="s2">&quot;Done creating EAR $earFile&quot;</span><span class="o">])</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="n">target</span><span class="o">(</span><span class="nl">defineContextRoot:</span> <span class="s2">&quot;defines the context root&quot;</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>  <span class="n">contextRoot</span> <span class="o">=</span> <span class="s2">&quot;${grailsAppName}&quot;</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="n">target</span><span class="o">(</span><span class="nl">generateApplicationXml:</span> <span class="s2">&quot;Generates an application.xml file&quot;</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>  <span class="n">depends</span><span class="o">(</span><span class="n">defineContextRoot</span><span class="o">)</span>
+</span><span class='line'>  <span class="kt">def</span> <span class="n">warDest</span> <span class="o">=</span> <span class="k">new</span> <span class="n">File</span><span class="o">(</span><span class="n">warName</span><span class="o">)</span>
+</span><span class='line'>  <span class="n">appXml</span> <span class="o">=</span> <span class="s2">&quot;${projectTargetDir}/application.xml&quot;</span>
+</span><span class='line'>  <span class="k">new</span> <span class="nf">File</span><span class="o">(</span><span class="n">appXml</span><span class="o">).</span><span class="na">write</span> <span class="s2">&quot;&quot;&quot;&lt;?xml version=&quot;</span><span class="mf">1.0</span><span class="s2">&quot; encoding=&quot;</span><span class="n">UTF</span><span class="o">-</span><span class="mi">8</span><span class="s2">&quot;?&gt;</span>
+</span><span class='line'><span class="s2">&lt;application xmlns=&quot;</span><span class="nl">http:</span><span class="c1">//java.sun.com/xml/ns/javaee&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; version=&quot;5&quot; xsi:schemaLocation=&quot;http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/application_5.xsd&quot;&gt;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">display</span><span class="o">-</span><span class="n">name</span><span class="o">&gt;</span><span class="n">$</span><span class="o">{</span><span class="n">grailsAppName</span><span class="o">}&lt;</span><span class="s">/display-name&gt;</span>
+</span><span class='line'><span class="s">&lt;module&gt;</span>
+</span><span class='line'><span class="s">    &lt;web&gt;</span>
+</span><span class='line'><span class="s">        &lt;web-uri&gt;${warDest.name}&lt;/</span><span class="n">web</span><span class="o">-</span><span class="n">uri</span><span class="o">&gt;</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="n">context</span><span class="o">-</span><span class="n">root</span><span class="o">&gt;</span><span class="n">$</span><span class="o">{</span><span class="n">contextRoot</span><span class="o">}&lt;</span><span class="s">/context-root&gt;</span>
+</span><span class='line'><span class="s">    &lt;/</span><span class="n">web</span><span class="o">&gt;</span>
+</span><span class='line'> <span class="o">&lt;</span><span class="s">/module&gt;</span>
+</span><span class='line'><span class="s">&lt;/</span><span class="n">application</span><span class="o">&gt;</span><span class="s2">&quot;&quot;</span><span class="err">&quot;</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">setDefaultTarget</span><span class="o">(</span><span class="n">ear</span><span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>Install Web.xml and JNDI</h4>
+
+<p>If, like us, you use JNDI for your database connection you will probably want to add it to the web.xml.  Just run the <code>grails install-templates</code> command and modify your web.xml with your jndi node similar to below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;web-app&gt;</span>
+</span><span class='line'>...
+</span><span class='line'>    <span class="nt">&lt;resource-ref</span> <span class="na">id=</span><span class="s">&quot;ResourceRef_12345&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;res-ref-name&gt;</span>jdbc/MyName<span class="nt">&lt;/res-ref-name&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;res-type&gt;</span>javax.sql.DataSource<span class="nt">&lt;/res-type&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;res-auth&gt;</span>Application<span class="nt">&lt;/res-auth&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;res-sharing-scope&gt;</span>Shareable<span class="nt">&lt;/res-sharing-scope&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/resource-ref&gt;</span>
+</span><span class='line'><span class="nt">&lt;/web-app&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You should have your DataSource.groovy set up similar to this for each environment you are using.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">environments</span> <span class="o">{</span>
+</span><span class='line'>    <span class="o">...</span>
+</span><span class='line'>    <span class="n">production</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">dataSource</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">jndiName</span> <span class="o">=</span> <span class="s2">&quot;java:comp/env/jdbc/MyName&quot;</span>
+</span><span class='line'>            <span class="n">dialect</span> <span class="o">=</span> <span class="s2">&quot;org.hibernate.dialect.OracleDialect&quot;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you need this jndi available in dev (run-app local mode) you will need to add it to your Config.groovy.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">environments</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">development</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">// this will create the JNDI entry in the tomcat plugin for local execution</span>
+</span><span class='line'>        <span class="n">grails</span><span class="o">.</span><span class="na">naming</span><span class="o">.</span><span class="na">entries</span> <span class="o">=</span> <span class="o">[</span>
+</span><span class='line'>                <span class="s2">&quot;jdbc/MyName&quot;</span><span class="o">:</span> <span class="o">[</span>
+</span><span class='line'>                        <span class="nl">type:</span> <span class="s2">&quot;javax.sql.DataSource&quot;</span><span class="o">,</span> <span class="c1">//required</span>
+</span><span class='line'>                        <span class="nl">auth:</span> <span class="s2">&quot;Container&quot;</span><span class="o">,</span> <span class="c1">// optional</span>
+</span><span class='line'>                        <span class="nl">description:</span> <span class="s2">&quot;Data source for Database&quot;</span><span class="o">,</span> <span class="c1">//optional</span>
+</span><span class='line'>                        <span class="nl">driverClassName:</span> <span class="s2">&quot;com.mysql.jdbc.Driver&quot;</span><span class="o">,</span>
+</span><span class='line'>                        <span class="nl">url:</span> <span class="s2">&quot;jdbc:mysql://server:3306/db?useOldAliasMetadataBehavior=true&quot;</span><span class="o">,</span>
+</span><span class='line'>                        <span class="nl">username:</span> <span class="s2">&quot;blah&quot;</span><span class="o">,</span>
+</span><span class='line'>                        <span class="nl">password:</span> <span class="s2">&quot;secret&quot;</span><span class="o">,</span>
+</span><span class='line'>                        <span class="nl">maxActive:</span> <span class="s2">&quot;8&quot;</span><span class="o">,</span>
+</span><span class='line'>                        <span class="nl">maxIdle:</span> <span class="s2">&quot;8&quot;</span><span class="o">,</span>
+</span><span class='line'>                        <span class="nl">poolPreparedStatements:</span> <span class="s2">&quot;true&quot;</span>
+</span><span class='line'>                <span class="o">]</span>
+</span><span class='line'>        <span class="o">]</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>Additional WebSphere Web Xml Settings</h4>
+
+<p>There are two additional files you will probably need to create and put into your <code>web-app\WEB_INF</code> directory.</p>
+
+<p><strong>ibm-web-bnd.xml</strong></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;web-bnd</span> <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span> <span class="na">xmlns=</span><span class="s">&quot;http://websphere.ibm.com/xml/ns/javaee&quot;</span>
+</span><span class='line'>         <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://websphere.ibm.com/xml/ns/javaee http://websphere.ibm.com/xml/ns/javaee/ibm-web-bnd_1_0.xsd&quot;</span> <span class="na">version=</span><span class="s">&quot;1.0&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;virtual-host</span> <span class="na">name=</span><span class="s">&quot;default_host&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;resource-ref</span> <span class="na">name=</span><span class="s">&quot;jdbc/MyName&quot;</span> <span class="na">binding-name=</span><span class="s">&quot;jdbc/MyName&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/web-bnd&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>ibm-web-ext.xml</strong></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;web-ext</span> <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span> <span class="na">xmlns=</span><span class="s">&quot;http://websphere.ibm.com/xml/ns/javaee&quot;</span>
+</span><span class='line'>         <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://websphere.ibm.com/xml/ns/javaee http://websphere.ibm.com/xml/ns/javaee/ibm-web-ext_1_0.xsd&quot;</span> <span class="na">version=</span><span class="s">&quot;1.0&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;webApp</span> <span class="na">href=</span><span class="s">&quot;WEB-INF/web_merged.xml#WebApp_ID&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;jsp-attribute</span> <span class="na">name=</span><span class="s">&quot;reloadEnabled&quot;</span> <span class="na">value=</span><span class="s">&quot;true&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;jsp-attribute</span> <span class="na">name=</span><span class="s">&quot;reloadInterval&quot;</span> <span class="na">value=</span><span class="s">&quot;10&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;jsp-attribute</span> <span class="na">name=</span><span class="s">&quot;jdkSourceLevel&quot;</span> <span class="na">value=</span><span class="s">&quot;16&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;jsp-attribute</span> <span class="na">name=</span><span class="s">&quot;trackDependencies&quot;</span> <span class="na">value=</span><span class="s">&quot;true&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;jsp-attribute</span> <span class="na">name=</span><span class="s">&quot;keepgenerated&quot;</span> <span class="na">value=</span><span class="s">&quot;true&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/web-ext&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>WebSphere Settings</h4>
+
+<p>I am not even sure if these are needed, but I did them anyway. (from &lt;<a href="http://grails.org/Deployment#Websphere">http://grails.org/Deployment#Websphere</a> 6.1>)</p>
+
+<p>Server JVM settings:</p>
+
+<ul>
+<li>In &ldquo;Application servers > server > Process Definition > Java Virtual Machine&rdquo; set &ldquo;Generic JVM arguments&rdquo; to &ldquo;-Xverify:none&rdquo;</li>
+<li>In &ldquo;Application servers > server > Process Definition > Java Virtual Machine > Custom Properties&rdquo;, add a custom property name: com.ibm.ws.classloader.getInputStream.enableIOException value: true</li>
+<li>In &ldquo;Application servers > server > Web container > Custom Properties&rdquo;, add a custom property name: com.ibm.ws.webcontainer.invokeFiltersCompatibility value: true</li>
+</ul>
+
+
+<p>Also you will need to make sure that your Enterprise Application > Class loading and update detection</p>
+
+<ul>
+<li>Classes loaded with local class loader first (parent last)</li>
+<li>Single class loader for application</li>
+</ul>
+
+
+<h4>War Settings</h4>
+
+<p>In the end you will probably have jar/lib hell and your application may not start correctly.  Make sure all your plugins and dependencies have appropriate excludes.  For example, we are using spring security (not the plugin) and here is one dependency exclude example:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">compile</span><span class="o">(</span><span class="s1">&#39;org.springframework.security:spring-security-core:3.0.7.RELEASE&#39;</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">excludes</span> <span class="s1">&#39;spring-expression&#39;</span><span class="o">,</span> <span class="s1">&#39;spring-core&#39;</span><span class="o">,</span> <span class="s1">&#39;spring-context&#39;</span><span class="o">,</span> <span class="s1">&#39;spring-tx&#39;</span><span class="o">,</span>
+</span><span class='line'>             <span class="s1">&#39;spring-aop&#39;</span><span class="o">,</span> <span class="s1">&#39;spring-jdbc&#39;</span><span class="o">,</span> <span class="s1">&#39;spring-web&#39;</span><span class="o">,</span> <span class="s1">&#39;spring-test&#39;</span><span class="o">,</span> <span class="s1">&#39;aspectjrt&#39;</span><span class="o">,</span>
+</span><span class='line'>             <span class="s1">&#39;aspectjweaver&#39;</span><span class="o">,</span> <span class="s1">&#39;cglib-nodep&#39;</span><span class="o">,</span> <span class="s1">&#39;ehcache&#39;</span><span class="o">,</span> <span class="s1">&#39;commons-collections&#39;</span><span class="o">,</span>
+</span><span class='line'>             <span class="s1">&#39;hsqldb&#39;</span><span class="o">,</span> <span class="s1">&#39;jsr250-api&#39;</span><span class="o">,</span> <span class="s1">&#39;log4j&#39;</span><span class="o">,</span> <span class="s1">&#39;junit&#39;</span><span class="o">,</span> <span class="s1">&#39;mockito-core&#39;</span><span class="o">,</span> <span class="s1">&#39;jmock-junit4&#39;</span><span class="o">,</span>
+</span><span class='line'>             <span class="s1">&#39;spring-aop&#39;</span><span class="o">,</span> <span class="s1">&#39;spring-beans&#39;</span><span class="o">,</span> <span class="s1">&#39;spring-context&#39;</span><span class="o">,</span> <span class="s1">&#39;spring-core&#39;</span><span class="o">,</span> <span class="s1">&#39;spring-tx&#39;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I currently am also telling grails to remove certain jars from the war in <code>BuildConfig.groovy</code> via</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">grails</span><span class="o">.</span><span class="na">war</span><span class="o">.</span><span class="na">resources</span> <span class="o">=</span> <span class="o">{</span> <span class="n">stagingDir</span><span class="o">,</span> <span class="n">args</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="n">delete</span> <span class="nl">file:</span> <span class="s2">&quot;${stagingDir}/WEB-INF/lib/geronimo-servlet_2.5_spec-1.2.jar&quot;</span>
+</span><span class='line'>    <span class="n">delete</span> <span class="nl">file:</span> <span class="s2">&quot;${stagingDir}/WEB-INF/lib/geronimo-jms_1.1_spec-1.1.1.jar&quot;</span>
+</span><span class='line'>    <span class="n">delete</span> <span class="nl">file:</span> <span class="s2">&quot;${stagingDir}/WEB-INF/lib/geronimo-commonj_1.1_spec-1.0.jar&quot;</span>
+</span><span class='line'>    <span class="n">delete</span> <span class="nl">file:</span> <span class="s2">&quot;${stagingDir}/WEB-INF/lib/jta-1.1.jar&quot;</span>
+</span><span class='line'>    <span class="n">delete</span> <span class="nl">file:</span> <span class="s2">&quot;${stagingDir}/WEB-INF/lib/ojdbc.jar&quot;</span>
+</span><span class='line'>    <span class="n">delete</span> <span class="nl">file:</span> <span class="s2">&quot;${stagingDir}/WEB-INF/lib/antlr-2.7.6.jar&quot;</span>
+</span><span class='line'>    <span class="n">delete</span> <span class="nl">file:</span> <span class="s2">&quot;${stagingDir}/WEB-INF/lib/geronimo-javamail_1.4_spec-1.7.1.jar&quot;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>Conclusion</h4>
+
+<p>Good Luck&hellip;</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Christian Oestreich</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-10-20T12:00:00+00:00" pubdate data-updated="true">Oct 20<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/grails/'>Grails</a>, <a class='category' href='/blog/categories/groovy/'>Groovy</a>, <a class='category' href='/blog/categories/technology/'>Technology</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://www.christianoestreich.com/2012/10/deloying-grails-2-to-websphere/" data-via="ctoestreich" data-counturl="http://www.christianoestreich.com/2012/10/deloying-grails-2-to-websphere/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/2012/04/grails-cxf-interceptor-injection.markdown/" title="Previous Post: Grails Cxf Interceptor Injection">&laquo; Grails Cxf Interceptor Injection</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/2012/11/domain-constraints-grails-spock-updated/" title="Next Post: Testing Domain Constraints Using Grails 2.x & Spock 0.7">Testing Domain Constraints Using Grails 2.x & Spock 0.7 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.christianoestreich.com/2012/10/deloying-grails-2-to-websphere/';
+        var disqus_url = 'http://www.christianoestreich.com/2012/10/deloying-grails-2-to-websphere/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

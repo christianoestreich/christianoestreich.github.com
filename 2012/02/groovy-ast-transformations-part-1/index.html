@@ -1,0 +1,705 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Grails Redis Plugin Memoization Annotation Transformation (A Retrospective on Groovy AST) - Christian Oestreich</title>
+  <meta name="author" content="Christian Oestreich">
+
+  
+  <meta name="description" content="Recently while developing a prototype application for performance testing using redis and jesque (see post) I got to thinking &ldquo;why doesn&rsquo; &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.christianoestreich.com/2012/02/groovy-ast-transformations-part-1/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="http://feeds.feedburner.com/ctoestreich" rel="alternate" title="Christian Oestreich" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-8726967-3']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Christian Oestreich</a></h1>
+  <h2><a class="brand" href="http://www.twoguysindesign.com" style="color:#9ed846;text-decoration: none;"><i class="fa fa-male fa-border"></i>&nbsp;<i class="fa fa-male fa-border"></i>&nbsp;&nbsp;two guys in design</a> - software.development.professional</h2>
+
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="http://feeds.feedburner.com/ctoestreich" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.christianoestreich.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+    <li><a href="/">Blog</a></li>
+    <li><a href="/blog/archives">Archives</a></li>
+    <li><a href="/blog/categories/grails/index.html">Grails</a></li>
+    <li><a href="/blog/categories/groovy/index.html">Groovy</a></li>
+    <li><a href="/blog/categories/javascript/index.html">JavaScript</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Grails Redis Plugin Memoization Annotation Transformation (a Retrospective on Groovy AST)</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-03T17:00:00+00:00" pubdate data-updated="true">Feb 3<span>rd</span>, 2012</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Recently while developing a prototype application for performance testing using <a href="http://www.grails.org/plugin/redis" title="Redis Plugin">redis</a> and <a href="http://www.grails.org/plugin/jesque" title="Jesque Plugin">jesque</a> (see <a href="http://www.christianoestreich.com/2012/02/grails-performance-framework/" title="My Blog">post</a>) I got to thinking &ldquo;why doesn&rsquo;t the grails redis plugin currently have support for annotation based memoization like spring cache?&rdquo;  I figured I would set out to add that support and learn to write <a href="http://groovy.codehaus.org/Compile-time+Metaprogramming+-+AST+Transformations" title="Groovy AST">Groovy AST Transformations</a> at the same time.  The process was long and arduous and I learned a lot during my several weeks of coding.</p>
+
+<!-- more -->
+
+
+<h2>First Steps</h2>
+
+<p>I started off by reading articles on AST and found many great examples of existing AST transformations, blogs, and tests already written that I could leverage.  Here are some if you are looking for additional resources:</p>
+
+<ul>
+<li><a href="https://github.com/grails-plugins/grails-redis/tree/master/src/groovy/grails/plugin/redis" title="Memoization AST Transformation Code">Memoization AST Transformation Source Code</a></li>
+<li><a href="http://svn.codehaus.org/groovy/trunk/groovy/groovy-core/src/test/org/codehaus/groovy/ast/builder/AstBuilderFromSpecificationTest.groovy">AST Builder Examples</a></li>
+<li><a href="http://grails.io/post/15965611310/lessons-learnt-developing-groovy-ast-transformations">Lessons Learnt Developing Groovy AST Transformations</a></li>
+<li><a href="http://groovy.codehaus.org/Local+AST+Transformations">Local AST Transformations</a></li>
+<li><a href="http://groovy.codehaus.org/Building+AST+Guide">Building AST Guide</a></li>
+<li><a href="http://java.dzone.com/articles/groovy-ast-transformations">Groovy AST Transformations by Example: Adding Methods to Classes</a></li>
+<li><a href="http://joesgroovyblog.blogspot.com/2011/10/ast-transformation-using-astbuilder.html">AST Transformations: Creating a Complex AST Transformation</a></li>
+<li><a href="http://joesgroovyblog.blogspot.com/2011/09/ast-transformations-compiler-phases-and.html">AST Transformations: Compiler Phases and Syntax Trees</a></li>
+<li><a href="http://joesgroovyblog.blogspot.com/2011/09/ast-transformations-transformation.html">AST Transformations: The transformation itself</a></li>
+<li><a href="http://blog.andresteingress.com/2010/06/18/unit-testing-groovy-ast-transformations/">Unit Testing AST</a></li>
+</ul>
+
+
+<p>There are a lot more out there in the world and you can find plenty <a href="http://lmgtfy.com/?q=groovy+ast">here</a>.</p>
+
+<h2>The End Goal</h2>
+
+<p>The end goal was pretty simple; to transform an annotated method like the first below during compile time into something that looked like the second method below at runtime.  Using an annotation with a key, expire, etc. and injecting code that would wrap all the method contents into a call to an appropriate redisService.memoize method.  I would then create memoize annotations for each type of memoize to be performed (domain, list, hash, set, etc).</p>
+
+<p>Turn this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="nd">@Memoize</span><span class="o">(</span><span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;#{text}&#39;</span><span class="o">)</span>
+</span><span class='line'><span class="kt">def</span> <span class="nf">method</span><span class="o">(</span><span class="n">String</span> <span class="n">text</span><span class="o">,</span> <span class="n">Date</span> <span class="n">date</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="s2">&quot;$text $date&quot;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Into this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kt">def</span> <span class="nf">method</span><span class="o">(</span><span class="n">String</span> <span class="n">text</span><span class="o">,</span> <span class="n">Date</span> <span class="n">date</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">redisService</span><span class="o">.</span><span class="na">memoize</span><span class="o">(</span><span class="n">text</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="s2">&quot;$text $date&quot;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Start Coding &ndash; Issue 1</h2>
+
+<p>Getting started was easy.  I created the annotation class Memoize.groovy and the actual transformation MemoizeASTTransformation.groovy as follows:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="nd">@Retention</span><span class="o">(</span><span class="n">RetentionPolicy</span><span class="o">.</span><span class="na">SOURCE</span><span class="o">)</span>
+</span><span class='line'><span class="nd">@Target</span><span class="o">([</span><span class="n">ElementType</span><span class="o">.</span><span class="na">METHOD</span><span class="o">])</span>
+</span><span class='line'><span class="nd">@GroovyASTTransformationClass</span><span class="o">([</span><span class="s1">&#39;grails.plugin.redis.ast.MemoizeASTTransformation&#39;</span><span class="o">])</span>
+</span><span class='line'><span class="nd">@interface</span> <span class="n">Memoize</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Class</span> <span class="nf">value</span><span class="o">()</span> <span class="k">default</span> <span class="o">{</span><span class="kc">true</span><span class="o">};</span>
+</span><span class='line'>    <span class="n">String</span> <span class="nf">key</span><span class="o">()</span> <span class="k">default</span> <span class="s1">&#39;&#39;</span><span class="o">;</span>
+</span><span class='line'>    <span class="n">String</span> <span class="nf">expire</span><span class="o">()</span> <span class="k">default</span> <span class="s1">&#39;&#39;</span><span class="o">;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="nd">@GroovyASTTransformation</span><span class="o">(</span><span class="n">phase</span> <span class="o">=</span> <span class="n">CompilePhase</span><span class="o">.</span><span class="na">CANONICALIZATION</span><span class="o">)</span>
+</span><span class='line'><span class="kd">class</span> <span class="nc">MemoizeASTTransformation</span> <span class="kd">implements</span> <span class="n">ASTTransformation</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="nf">visit</span><span class="o">(</span><span class="n">ASTNode</span><span class="o">[]</span> <span class="n">astNodes</span><span class="o">,</span> <span class="n">SourceUnit</span> <span class="n">sourceUnit</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">println</span> <span class="s1">&#39;in transformation&#39;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Easy enough right?!  When trying to decorate a service method in the project with the <code>@Memoize</code> method I ran into my first big hurdle&hellip; it didn&rsquo;t work.  I scratched my head for a long time.  Errors during compile?  No.  Printing &lsquo;in transformation&rsquo; during compile?  No.</p>
+
+<p>I will cut to the chase and give you the solution to this issue.  Having another project using the AST annotations that pointed to the grails-redis plugin (AST annotation source) inline fixed this issue.  Why? Well it appears that the AST Transformation classes themselves are compiled along with everything else so during the actual <code>CompilePhase.CANONICALIZATION</code> there are no ASTs available to apply yet since they aren&rsquo;t compiled.  When a project was consuming the source as a plugin, it would compile the plugin code first and then compile the new project and the correct statement would print out.  I am not sure if I was doing something wrong or if there is another way around this, but for me this solution worked like a charm.</p>
+
+<h2>Write More Code &ndash; Issue 2</h2>
+
+<p>I was able to move beyond those issues and start adding a bunch of code to the MemoizeASTTransformation.groovy class.  Everything was humming along nicely.  On a side note, I did have a bit of a hard time deciding between using the AstBuilder or the more verbose statements and expressions to build up the code and opted for the more verbose usage of the direct <em>Statements and </em>Expressions.</p>
+
+<p>I had built up a fair amount of AST code that seemed to be working as expected until it came time to create the method closure to hand to the redisService.  If we look at the redis service method definition we can see that it takes a closure as the code to execute if the key isn&rsquo;t found.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kt">def</span> <span class="nf">memoize</span><span class="o">(</span><span class="n">String</span> <span class="n">key</span><span class="o">,</span> <span class="n">Map</span> <span class="n">options</span> <span class="o">=</span> <span class="o">[:],</span> <span class="n">Closure</span> <span class="n">closure</span><span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>There is a very convenient <code>ClosureExpression</code> available in the code to create a closure block of code and it&rsquo;s usage is rather simple.   The following two blocks of code attempts to create the arguments for the memoize method, including the closure, and wrap the existing method code of the annocated method in the closure.  There is a lot to the code here that I am not covering, but I don&rsquo;t want to dumb down the code too much in explaining the issue so I can try and help you avoid it.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kd">protected</span> <span class="kt">void</span> <span class="nf">addRedisServiceMemoizeInvocation</span><span class="o">(</span><span class="n">BlockStatement</span> <span class="n">body</span><span class="o">,</span> <span class="n">MethodNode</span> <span class="n">methodNode</span><span class="o">,</span> <span class="n">Map</span> <span class="n">memoizeProperties</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">ArgumentListExpression</span> <span class="n">argumentListExpression</span> <span class="o">=</span> <span class="n">makeRedisServiceArgumentListExpression</span><span class="o">(</span><span class="n">memoizeProperties</span><span class="o">)</span>
+</span><span class='line'>    <span class="n">argumentListExpression</span><span class="o">.</span><span class="na">addExpression</span><span class="o">(</span><span class="n">makeClosureExpression</span><span class="o">(</span><span class="n">methodNode</span><span class="o">))</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">body</span><span class="o">.</span><span class="na">addStatement</span><span class="o">(</span>
+</span><span class='line'>            <span class="k">new</span> <span class="nf">ReturnStatement</span><span class="o">(</span>
+</span><span class='line'>                    <span class="k">new</span> <span class="nf">MethodCallExpression</span><span class="o">(</span>
+</span><span class='line'>                            <span class="k">new</span> <span class="nf">VariableExpression</span><span class="o">(</span><span class="s1">&#39;redisService&#39;</span><span class="o">),</span>
+</span><span class='line'>                            <span class="k">new</span> <span class="nf">ConstantExpression</span><span class="o">(</span><span class="s1">&#39;memoize&#39;</span><span class="o">),</span>
+</span><span class='line'>                            <span class="n">argumentListExpression</span>
+</span><span class='line'>                    <span class="o">)</span>
+</span><span class='line'>            <span class="o">)</span>
+</span><span class='line'>    <span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">protected</span> <span class="n">ClosureExpression</span> <span class="nf">makeClosureExpression</span><span class="o">(</span><span class="n">MethodNode</span> <span class="n">methodNode</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">ClosureExpression</span> <span class="n">closureExpression</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ClosureExpression</span><span class="o">(</span>
+</span><span class='line'>            <span class="o">[]</span> <span class="k">as</span> <span class="n">Parameter</span><span class="o">[],</span>
+</span><span class='line'>            <span class="k">new</span> <span class="nf">BlockStatement</span><span class="o">(</span><span class="n">methodNode</span><span class="o">.</span><span class="na">code</span><span class="o">.</span><span class="na">statements</span> <span class="k">as</span> <span class="n">Statement</span><span class="o">[],</span> <span class="k">new</span> <span class="n">VariableScope</span><span class="o">())</span>
+</span><span class='line'>    <span class="o">)</span>
+</span><span class='line'>    <span class="n">closureExpression</span><span class="o">.</span><span class="na">variableScope</span> <span class="o">=</span> <span class="k">new</span> <span class="n">VariableScope</span><span class="o">()</span>
+</span><span class='line'>    <span class="n">closureExpression</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This code failed and failed and failed to run (but did compile) in many different rewrites.  It usually errored at runtime telling me that some variables I referenced in the parent method like $text was not in scope in the closure.  I figured from some earlier troubles with VariableScopes that It was something to do with how the variable scopes were inherited.  I could also see a drastic difference in the decompiled code using <a href="http://java.decompiler.free.fr/?q=jdgui" title="JD-GUI">JD-GUI</a> in that the closure created didn&rsquo;t pass into themselves the variables used inside the actual method call.</p>
+
+<p>Again to save headache I discovered, through a miracle I think, the following code:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="n">VariableScopeVisitor</span> <span class="n">scopeVisitor</span> <span class="o">=</span> <span class="k">new</span> <span class="n">VariableScopeVisitor</span><span class="o">(</span><span class="n">sourceUnit</span><span class="o">);</span>
+</span><span class='line'><span class="n">sourceUnit</span><span class="o">.</span><span class="na">AST</span><span class="o">.</span><span class="na">classes</span><span class="o">.</span><span class="na">each</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">scopeVisitor</span><span class="o">.</span><span class="na">visitClass</span><span class="o">(</span><span class="n">it</span><span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Running this at the end of the main visit method caused all the variable scopes to be correct propagated down to the newly created objects I was using, including the ClosureExpression.</p>
+
+<ul>
+<li><a href="http://groovy.codehaus.org/api/org/codehaus/groovy/classgen/VariableScopeVisitor.html">API Docs</a></li>
+<li><a href="http://www.devdaily.com/java/jwarehouse/groovy/src/main/org/codehaus/groovy/tools/javac/JavaAwareCompilationUnit.java.shtml">Sample Usage</a></li>
+</ul>
+
+
+<p>Having inspected the source, I can best describe what it does as <em>aligning the correct variable scope inheritance in your class</em>.  There is an explicit visitClosureExpression method that does the magic and injects the scoped variables into the closure.  Following code that uses the visitor pattern is a bit tedious at times, but that is the best I can surmise from digging through that code.  Here is a snippet from the VariableScopeVisitor.java class:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">visitClosureExpression</span><span class="o">(</span><span class="n">ClosureExpression</span> <span class="n">expression</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">pushState</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">expression</span><span class="o">.</span><span class="na">setVariableScope</span><span class="o">(</span><span class="n">currentScope</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">expression</span><span class="o">.</span><span class="na">isParameterSpecified</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">Parameter</span><span class="o">[]</span> <span class="n">parameters</span> <span class="o">=</span> <span class="n">expression</span><span class="o">.</span><span class="na">getParameters</span><span class="o">();</span>
+</span><span class='line'>        <span class="k">for</span> <span class="o">(</span><span class="n">Parameter</span> <span class="n">parameter</span> <span class="o">:</span> <span class="n">parameters</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">parameter</span><span class="o">.</span><span class="na">setInStaticContext</span><span class="o">(</span><span class="n">currentScope</span><span class="o">.</span><span class="na">isInStaticContext</span><span class="o">());</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">parameter</span><span class="o">.</span><span class="na">hasInitialExpression</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">parameter</span><span class="o">.</span><span class="na">getInitialExpression</span><span class="o">().</span><span class="na">visit</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>            <span class="n">declare</span><span class="o">(</span><span class="n">parameter</span><span class="o">,</span> <span class="n">expression</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">expression</span><span class="o">.</span><span class="na">getParameters</span><span class="o">()</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">Parameter</span> <span class="n">var</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Parameter</span><span class="o">(</span><span class="n">ClassHelper</span><span class="o">.</span><span class="na">OBJECT_TYPE</span><span class="o">,</span> <span class="s">&quot;it&quot;</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">var</span><span class="o">.</span><span class="na">setInStaticContext</span><span class="o">(</span><span class="n">currentScope</span><span class="o">.</span><span class="na">isInStaticContext</span><span class="o">());</span>
+</span><span class='line'>        <span class="n">currentScope</span><span class="o">.</span><span class="na">putDeclaredVariable</span><span class="o">(</span><span class="n">var</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">visitClosureExpression</span><span class="o">(</span><span class="n">expression</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">markClosureSharedVariables</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">popState</span><span class="o">();</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I believe it is the line:</p>
+
+<pre><code>declare(parameter, expression);
+</code></pre>
+
+<p>which appears to do a lot of the magic in defining and adding the variables to the scope.  The <code>declare</code> method ultimately calls</p>
+
+<pre><code>currentScope.putDeclaredVariable(var);
+</code></pre>
+
+<p>for each variable in the <em>n &ndash; 1</em> scope, in our case the parent of the closure.</p>
+
+<p>This relatively short issue and code solution took a big chunk of my free time in December and early January.  Time I can only hope to save someone else in the future when doing this type of closure wrapping transformation.</p>
+
+<h2>It Works&hellip; Almost &ndash; Issue 3</h2>
+
+<p>When defining a key property string in the annotation the use of the <code>$</code> character is not allowed as that will reference an ACTUAL GString at compile time.  We want the value to represent a GString to get interpreted at runtime.  I opted to have the users provide variables in the format <code>#{var}</code> leveraging the <code>#</code> sign as a replacement for the <code>$</code> character.</p>
+
+<p>With that issue resolved it was time to tackle passing the <em>GString variable</em> into the annotation closure as the memoization key.  That went awry very quickly as using a GString gets a little tricky when a user is passing in compound GStrings.  Representing the key as an expression <code>$variable</code> might be easy, but using something like <code>${key}:string${key2.prop}:value2</code> was proving to be hard as you would have to split and iterate all the GStrings vs non-GStrings in that statement.</p>
+
+<p>The following is some sample code from the codehaus AST builder tests illustrating the typical usage of a GStringExpression in both builder and regular code.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">testGStringExpression</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="c1">// &quot;$foo&quot;</span>
+</span><span class='line'>    <span class="kt">def</span> <span class="n">result</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AstBuilder</span><span class="o">().</span><span class="na">buildFromSpec</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">gString</span> <span class="s1">&#39;$foo astring $bar&#39;</span><span class="o">,</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">strings</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">constant</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'>                <span class="n">constant</span> <span class="s1">&#39; astring &#39;</span>
+</span><span class='line'>                <span class="n">constant</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>            <span class="n">values</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">variable</span> <span class="s1">&#39;foo&#39;</span>
+</span><span class='line'>                <span class="n">variable</span> <span class="s1">&#39;bar&#39;</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">def</span> <span class="n">expected</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GStringExpression</span><span class="o">(</span><span class="s1">&#39;$foo astring $bar&#39;</span><span class="o">,</span>
+</span><span class='line'>            <span class="o">[</span><span class="k">new</span> <span class="n">ConstantExpression</span><span class="o">(</span><span class="s1">&#39;&#39;</span><span class="o">),</span> <span class="k">new</span> <span class="n">ConstantExpression</span><span class="o">(</span><span class="s1">&#39; astring &#39;</span><span class="o">),</span> <span class="k">new</span> <span class="n">ConstantExpression</span><span class="o">(</span><span class="s1">&#39;&#39;</span><span class="o">)],</span>
+</span><span class='line'>            <span class="o">[</span><span class="k">new</span> <span class="n">VariableExpression</span><span class="o">(</span><span class="s1">&#39;foo&#39;</span><span class="o">),</span> <span class="k">new</span> <span class="n">VariableExpression</span><span class="o">(</span><span class="s1">&#39;bar&#39;</span><span class="o">)])</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">AstAssert</span><span class="o">.</span><span class="na">assertSyntaxTree</span><span class="o">([</span><span class="n">expected</span><span class="o">],</span> <span class="n">result</span><span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I went down the path of trying to parse the user provided string into a meaningful GStringExpression with little to no luck using complex/compound strings.</p>
+
+<p>I figured if I could combine the <code>AstBuilder.buildFromString{}</code> method I might be able to use the statement(s) it generated and inject them into the code while letting the AstBuilder do the work in creating the GStringExpression.  After some tweaking, this is what I came up with, and it worked!</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kd">protected</span> <span class="kt">void</span> <span class="nf">addRedisServiceMemoizeKeyExpression</span><span class="o">(</span><span class="n">Map</span> <span class="n">memoizeProperties</span><span class="o">,</span> <span class="n">ArgumentListExpression</span> <span class="n">argumentListExpression</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">if</span><span class="o">(</span><span class="n">memoizeProperties</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s1">&#39;key&#39;</span><span class="o">).</span><span class="na">toString</span><span class="o">().</span><span class="na">contains</span><span class="o">(</span><span class="s1">&#39;#&#39;</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kt">def</span> <span class="n">ast</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AstBuilder</span><span class="o">().</span><span class="na">buildFromString</span><span class="o">(</span><span class="s2">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="s2">            &quot;</span><span class="n">$</span><span class="o">{</span><span class="n">memoizeProperties</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s1">&#39;key&#39;</span><span class="o">).</span><span class="na">toString</span><span class="o">().</span><span class="na">replace</span><span class="o">(</span><span class="s1">&#39;#&#39;</span><span class="o">,</span> <span class="s1">&#39;$&#39;</span><span class="o">).</span><span class="na">toString</span><span class="o">()}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="s2">       &quot;&quot;&quot;</span><span class="o">)</span>
+</span><span class='line'>        <span class="n">argumentListExpression</span><span class="o">.</span><span class="na">addExpression</span><span class="o">(</span><span class="n">ast</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="na">statements</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="na">expression</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">argumentListExpression</span><span class="o">.</span><span class="na">addExpression</span><span class="o">(</span><span class="k">new</span> <span class="n">ConstantExpression</span><span class="o">(</span><span class="n">memoizeProperties</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s1">&#39;key&#39;</span><span class="o">).</span><span class="na">toString</span><span class="o">()))</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The real guts of this is in the following statements.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="kt">def</span> <span class="n">ast</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AstBuilder</span><span class="o">().</span><span class="na">buildFromString</span><span class="o">(</span><span class="s2">&quot;&quot;&quot;</span>
+</span><span class='line'><span class="s2">    &quot;</span><span class="n">$</span><span class="o">{</span><span class="n">memoizeProperties</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s1">&#39;key&#39;</span><span class="o">).</span><span class="na">toString</span><span class="o">().</span><span class="na">replace</span><span class="o">(</span><span class="s1">&#39;#&#39;</span><span class="o">,</span> <span class="s1">&#39;$&#39;</span><span class="o">).</span><span class="na">toString</span><span class="o">()}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="s2">&quot;&quot;&quot;</span><span class="o">)</span>
+</span><span class='line'><span class="n">argumentListExpression</span><span class="o">.</span><span class="na">addExpression</span><span class="o">(</span><span class="n">ast</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="na">statements</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="na">expression</span><span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Combining the expression built from the AstBuilder with the ArgumentListExpression married well together and I was happy that the solution ended up being so simple.  At one point I think the parsing, looping, etc. logic was nearly 100 lines of frustrating and non-working code.</p>
+
+<h2>Up Next</h2>
+
+<p>Next week I will post a more concise list of AST-isms that I feel are important when working with the code and things to be mindful of when coding.  It may end up looking similar to what Graeme posted on <a href="http://grails.io/post/15965611310/lessons-learnt-developing-groovy-ast-transformations">lessons learned</a>.  I think the pain I experienced at least warrants a list of things to do/avoid next time around.  Stay Tuned!</p>
+
+<h2>Code</h2>
+
+<p>The memoization AST transformation code I am referencing here is available at <a href="https://github.com/grails-plugins/grails-redis/tree/master/src/groovy/grails/plugin/redis" title="Memoization AST Transformation Code">github</a>.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Christian Oestreich</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-02-03T17:00:00+00:00" pubdate data-updated="true">Feb 3<span>rd</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/technology/'>Technology</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://www.christianoestreich.com/2012/02/groovy-ast-transformations-part-1/" data-via="ctoestreich" data-counturl="http://www.christianoestreich.com/2012/02/groovy-ast-transformations-part-1/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/2012/02/grails-performance-framework/" title="Previous Post: Grails Performance Framework">&laquo; Grails Performance Framework</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/2012/02/grails-cxf-client-http-client-policy/" title="Next Post: Grails Cxf Client 1.2.7 Released">Grails Cxf Client 1.2.7 Released &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/2013/12/knockout-validation-rules-engine/">Knockout Validation Rules Engine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/07/grails-plugin-template-override/">Grails Plugin Template Override</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/05/travis-ci-grails-gvm/">Travis CI & Grails GVM</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2013/01/wss4j-simple-security-using-wslite/">WSS4J Simple Security Using Groovy WSLite</a>
+      </li>
+    
+      <li class="post">
+        <a href="/2012/12/coffeescript-ant-task-updated/">CoffeeScript Ant Task Updated</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/ctoestreich">@ctoestreich</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'ctoestreich',
+            count: 10,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+
+</section>
+
+
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh2_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/Grails-Plugin-Consortium">@Grails-Plugin-Consortium</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'Grails-Plugin-Consortium',
+            count: 10,
+            skip_forks: true,
+            target: '#gh2_repos'
+        });
+    });
+  </script>
+</section>
+
+
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Christian Oestreich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'christianoestreich';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.christianoestreich.com/2012/02/groovy-ast-transformations-part-1/';
+        var disqus_url = 'http://www.christianoestreich.com/2012/02/groovy-ast-transformations-part-1/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

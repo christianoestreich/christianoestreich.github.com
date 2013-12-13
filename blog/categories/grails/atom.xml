@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Grails | Christian Oestreich]]></title>
+  <link href="http://www.christianoestreich.com/blog/categories/grails/atom.xml" rel="self"/>
+  <link href="http://www.christianoestreich.com/"/>
+  <updated>2013-12-13T20:45:33+00:00</updated>
+  <id>http://www.christianoestreich.com/</id>
+  <author>
+    <name><![CDATA[Christian Oestreich]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Grails 2.x Deployed To Websphere 7ish]]></title>
+    <link href="http://www.christianoestreich.com/2012/10/deloying-grails-2-to-websphere/"/>
+    <updated>2012-10-20T12:00:00+00:00</updated>
+    <id>http://www.christianoestreich.com/2012/10/deloying-grails-2-to-websphere</id>
+    <content type="html"><![CDATA[<p>I have struggled a lot with getting our corporate-standard WebSphere container to play nicely with Grails in the past and when we moved to Grails 2.1.1 and WebSphere 7.0 it was no different.</p>
+
+<!-- more -->
+
+
+<h4>EAR Script</h4>
+
+<p>The first thing you will want to do is add the Ear script to your project under <code>scripts</code>.</p>
+
+<p>``` groovy
+includeTargets &lt;&lt; grailsScript(&ldquo;_GrailsWar&rdquo;)</p>
+
+<p>target(ear: &ldquo;Creates an EAR file from a Grails WAR&rdquo;) {
+  war()
+  event(&ldquo;StatusUpdate&rdquo;, [&ldquo;Building EAR file&rdquo;])
+  generateApplicationXml()
+  def warDest = new File(warName).parentFile
+  def appVersion = metadata.getApplicationVersion()
+  def earFile = &ldquo;${projectTargetDir}/${contextRoot}&ndash;${appVersion}.ear&rdquo;
+  ant.ear(destfile: earFile, appxml: appXml, update: true) {</p>
+
+<pre><code>fileset(dir: warDest, includes: "*.war")
+</code></pre>
+
+<p>  }
+  event(&ldquo;StatusFinal&rdquo;, [&ldquo;Done creating EAR $earFile&rdquo;])
+}
+target(defineContextRoot: &ldquo;defines the context root&rdquo;) {
+  contextRoot = &ldquo;${grailsAppName}&rdquo;
+}
+target(generateApplicationXml: &ldquo;Generates an application.xml file&rdquo;) {
+  depends(defineContextRoot)
+  def warDest = new File(warName)
+  appXml = &ldquo;${projectTargetDir}/application.xml&rdquo;
+  new File(appXml).write &ldquo;&rdquo;&ldquo;&lt;?xml version="1.0&rdquo; encoding=&ldquo;UTF-8&rdquo;?>
+<application xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="5" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/application_5.xsd">
+&lt;display-name>${grailsAppName}&lt;/display-name>
+<module></p>
+
+<pre><code>&lt;web&gt;
+    &lt;web-uri&gt;${warDest.name}&lt;/web-uri&gt;
+    &lt;context-root&gt;${contextRoot}&lt;/context-root&gt;
+&lt;/web&gt;
+</code></pre>
+
+<p> </module>
+</application>&ldquo;&rdquo;&ldquo;
+}</p>
+
+<p>setDefaultTarget(ear)
+```</p>
+
+<h4>Install Web.xml and JNDI</h4>
+
+<p>If, like us, you use JNDI for your database connection you will probably want to add it to the web.xml.  Just run the <code>grails install-templates</code> command and modify your web.xml with your jndi node similar to below.</p>
+
+<p>``` xml
+&lt;web-app>
+&hellip;</p>
+
+<pre><code>&lt;resource-ref id="ResourceRef_12345"&gt;
+    &lt;res-ref-name&gt;jdbc/MyName&lt;/res-ref-name&gt;
+    &lt;res-type&gt;javax.sql.DataSource&lt;/res-type&gt;
+    &lt;res-auth&gt;Application&lt;/res-auth&gt;
+    &lt;res-sharing-scope&gt;Shareable&lt;/res-sharing-scope&gt;
+&lt;/resource-ref&gt;
+</code></pre>
+
+<p>&lt;/web-app>
+```</p>
+
+<p>You should have your DataSource.groovy set up similar to this for each environment you are using.</p>
+
+<p>``` groovy
+environments {</p>
+
+<pre><code>...
+production {
+    dataSource {
+        jndiName = "java:comp/env/jdbc/MyName"
+        dialect = "org.hibernate.dialect.OracleDialect"
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>If you need this jndi available in dev (run-app local mode) you will need to add it to your Config.groovy.</p>
+
+<p>``` groovy
+environments {</p>
+
+<pre><code>development {
+    // this will create the JNDI entry in the tomcat plugin for local execution
+    grails.naming.entries = [
+            "jdbc/MyName": [
+                    type: "javax.sql.DataSource", //required
+                    auth: "Container", // optional
+                    description: "Data source for Database", //optional
+                    driverClassName: "com.mysql.jdbc.Driver",
+                    url: "jdbc:mysql://server:3306/db?useOldAliasMetadataBehavior=true",
+                    username: "blah",
+                    password: "secret",
+                    maxActive: "8",
+                    maxIdle: "8",
+                    poolPreparedStatements: "true"
+            ]
+    ]
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h4>Additional WebSphere Web Xml Settings</h4>
+
+<p>There are two additional files you will probably need to create and put into your <code>web-app\WEB_INF</code> directory.</p>
+
+<p><strong>ibm-web-bnd.xml</strong>
+``` xml
+&lt;?xml version=&ldquo;1.0&rdquo; encoding=&ldquo;UTF-8&rdquo;?>
+&lt;web-bnd xmlns:xsi=&ldquo;<a href="http://www.w3.org/2001/XMLSchema-instance">http://www.w3.org/2001/XMLSchema-instance</a>&rdquo; xmlns=&ldquo;<a href="http://websphere.ibm.com/xml/ns/javaee">http://websphere.ibm.com/xml/ns/javaee</a>&rdquo;</p>
+
+<pre><code>     xsi:schemaLocation="http://websphere.ibm.com/xml/ns/javaee http://websphere.ibm.com/xml/ns/javaee/ibm-web-bnd_1_0.xsd" version="1.0"&gt;
+&lt;virtual-host name="default_host"/&gt;
+&lt;resource-ref name="jdbc/MyName" binding-name="jdbc/MyName"/&gt;
+</code></pre>
+
+<p>&lt;/web-bnd>
+```</p>
+
+<p><strong>ibm-web-ext.xml</strong>
+``` xml
+&lt;?xml version=&ldquo;1.0&rdquo; encoding=&ldquo;UTF-8&rdquo;?>
+&lt;web-ext xmlns:xsi=&ldquo;<a href="http://www.w3.org/2001/XMLSchema-instance">http://www.w3.org/2001/XMLSchema-instance</a>&rdquo; xmlns=&ldquo;<a href="http://websphere.ibm.com/xml/ns/javaee">http://websphere.ibm.com/xml/ns/javaee</a>&rdquo;</p>
+
+<pre><code>     xsi:schemaLocation="http://websphere.ibm.com/xml/ns/javaee http://websphere.ibm.com/xml/ns/javaee/ibm-web-ext_1_0.xsd" version="1.0"&gt;
+&lt;webApp href="WEB-INF/web_merged.xml#WebApp_ID"/&gt;
+&lt;jsp-attribute name="reloadEnabled" value="true"/&gt;
+&lt;jsp-attribute name="reloadInterval" value="10"/&gt;
+&lt;jsp-attribute name="jdkSourceLevel" value="16"/&gt;
+&lt;jsp-attribute name="trackDependencies" value="true"/&gt;
+&lt;jsp-attribute name="keepgenerated" value="true"/&gt;
+</code></pre>
+
+<p>&lt;/web-ext>
+```</p>
+
+<h4>WebSphere Settings</h4>
+
+<p>I am not even sure if these are needed, but I did them anyway. (from &lt;<a href="http://grails.org/Deployment#Websphere">http://grails.org/Deployment#Websphere</a> 6.1>)</p>
+
+<p>Server JVM settings:</p>
+
+<ul>
+<li>In &ldquo;Application servers > server > Process Definition > Java Virtual Machine&rdquo; set &ldquo;Generic JVM arguments&rdquo; to &ldquo;-Xverify:none&rdquo;</li>
+<li>In &ldquo;Application servers > server > Process Definition > Java Virtual Machine > Custom Properties&rdquo;, add a custom property name: com.ibm.ws.classloader.getInputStream.enableIOException value: true</li>
+<li>In &ldquo;Application servers > server > Web container > Custom Properties&rdquo;, add a custom property name: com.ibm.ws.webcontainer.invokeFiltersCompatibility value: true</li>
+</ul>
+
+
+<p>Also you will need to make sure that your Enterprise Application > Class loading and update detection</p>
+
+<ul>
+<li>Classes loaded with local class loader first (parent last)</li>
+<li>Single class loader for application</li>
+</ul>
+
+
+<h4>War Settings</h4>
+
+<p>In the end you will probably have jar/lib hell and your application may not start correctly.  Make sure all your plugins and dependencies have appropriate excludes.  For example, we are using spring security (not the plugin) and here is one dependency exclude example:</p>
+
+<p>``` groovy
+compile(&lsquo;org.springframework.security:spring-security-core:3.0.7.RELEASE&rsquo;) {</p>
+
+<pre><code>excludes 'spring-expression', 'spring-core', 'spring-context', 'spring-tx',
+         'spring-aop', 'spring-jdbc', 'spring-web', 'spring-test', 'aspectjrt',
+         'aspectjweaver', 'cglib-nodep', 'ehcache', 'commons-collections',
+         'hsqldb', 'jsr250-api', 'log4j', 'junit', 'mockito-core', 'jmock-junit4',
+         'spring-aop', 'spring-beans', 'spring-context', 'spring-core', 'spring-tx'
+</code></pre>
+
+<p>}
+```</p>
+
+<p>I currently am also telling grails to remove certain jars from the war in <code>BuildConfig.groovy</code> via</p>
+
+<p>``` groovy
+grails.war.resources = { stagingDir, args &ndash;></p>
+
+<pre><code>delete file: "${stagingDir}/WEB-INF/lib/geronimo-servlet_2.5_spec-1.2.jar"
+delete file: "${stagingDir}/WEB-INF/lib/geronimo-jms_1.1_spec-1.1.1.jar"
+delete file: "${stagingDir}/WEB-INF/lib/geronimo-commonj_1.1_spec-1.0.jar"
+delete file: "${stagingDir}/WEB-INF/lib/jta-1.1.jar"
+delete file: "${stagingDir}/WEB-INF/lib/ojdbc.jar"
+delete file: "${stagingDir}/WEB-INF/lib/antlr-2.7.6.jar"
+delete file: "${stagingDir}/WEB-INF/lib/geronimo-javamail_1.4_spec-1.7.1.jar"
+</code></pre>
+
+<p>}
+```</p>
+
+<h4>Conclusion</h4>
+
+<p>Good Luck&hellip;</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Grails Cxf Interceptor Injection]]></title>
+    <link href="http://www.christianoestreich.com/2012/04/grails-cxf-interceptor-injection.markdown/"/>
+    <updated>2012-04-06T12:00:00+00:00</updated>
+    <id>http://www.christianoestreich.com/2012/04/grails-cxf-interceptor-injection.markdown</id>
+    <content type="html"><![CDATA[<p>In my <a href="https://www.github.com/Grails-Plugin-Consortium/cxf-client-demo" title="Grails Cxf Client Demo">grails cxf-client-demo project</a> I needed a way to test if the simple username token authentication wss4j interceptors were working.  I looked around the web for help on how to inject an inbound security interceptor into the <a href="http://www.grails.org/plugin/cxf" title="Grails Cxf Plugin">grails cxf plugin</a>.  I found some example on how to do this with cxf 2.3.x versions, but when I was recently helping update the <a href="http://www.grails.org/plugin/cxf" title="Grails Cxf Plugin">grails cxf plugin</a> to use cxf 2.5.2, I found out they changed the way that username token was done.</p>
+
+<!-- more -->
+
+
+<h4>Apache Cxf Security</h4>
+
+<p>All I have to say is good luck with using the sample code from the <a href="http://cxf.apache.org/docs/ws-security.html" title="Apache Cxf Security Docs">apache cxf security docs</a>.  Their code for 2.5.x is lacking and the code provided didn&rsquo;t work and caused me a lot of ???? moments.</p>
+
+<p>The <a href="http://www.grails.org/plugin/cxf" title="Grails Cxf Plugin">cxf plugin</a> wires up service factories that will match the name of your exposed service such as <code>secureService</code> with bean named <code>secureServiceFactory</code>.  You will want to inject any interceptors onto that factory during application boot.  For the following examples I use the BootStrap.groovy to inject these.</p>
+
+<h4>Grails Cxf Interceptor Injection 2.3.x</h4>
+
+<p>This is the &ldquo;old&rdquo; way of adding simple token authentication with 2.3.x.</p>
+
+<p>``` groovy
+import org.apache.cxf.ws.security.wss4j.WSS4JInInterceptor
+import org.apache.ws.security.WSConstants
+import org.apache.ws.security.WSPasswordCallback
+import org.apache.ws.security.handler.WSHandlerConstants</p>
+
+<p>import javax.security.auth.callback.Callback
+import javax.security.auth.callback.CallbackHandler
+import javax.security.auth.callback.UnsupportedCallbackException</p>
+
+<p>class BootStrap {</p>
+
+<pre><code>def secureServiceFactory
+
+def init = { servletContext -&gt;
+
+    Map&lt;String, Object&gt; inProps = [:]
+    inProps.put(WSHandlerConstants.ACTION, WSHandlerConstants.USERNAME_TOKEN);
+    inProps.put(WSHandlerConstants.PASSWORD_TYPE, WSConstants.PW_TEXT);
+    inProps.put(WSHandlerConstants.PW_CALLBACK_REF, new CallbackHandler() {
+
+        void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+            WSPasswordCallback pc = (WSPasswordCallback) callbacks[0]
+            println pc.identifier
+            println pc.password
+            if(pc.identifier == "wsuser" &amp;&amp; pc.password != "secret") {
+                println "error :: wrong password"
+                throw new IOException("wrong password")
+            }
+        }
+    })
+    secureServiceFactory.getInInterceptors().add(new WSS4JInInterceptor(inProps))
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h4>Grails Cxf Interceptor Injection 2.4.x-2.5.x</h4>
+
+<p>Since the new apache cxf 2.4.x and 2.5.x use a Validator instead of the callback, here is how you would now inject that same check into the same service factory.  I am using an anonymous UsernameTokenValidator class just like the anonymous callback in the previous example.</p>
+
+<p>``` groovy
+import org.apache.cxf.ws.security.wss4j.WSS4JInInterceptor
+import org.apache.ws.security.WSConstants
+import org.apache.ws.security.WSSecurityEngine
+import org.apache.ws.security.WSSecurityException
+import org.apache.ws.security.handler.WSHandlerConstants
+import org.apache.ws.security.validate.UsernameTokenValidator
+import org.apache.ws.security.validate.Validator</p>
+
+<p>import javax.xml.namespace.QName</p>
+
+<p>class BootStrap {</p>
+
+<pre><code>def secureServiceFactory
+
+def init = { servletContext -&gt;
+
+    Map&lt;String, Object&gt; inProps = [:]
+    inProps.put(WSHandlerConstants.ACTION, WSHandlerConstants.USERNAME_TOKEN);
+    inProps.put(WSHandlerConstants.PASSWORD_TYPE, WSConstants.PW_TEXT);
+    Map&lt;QName, Validator&gt; validatorMap = new HashMap&lt;QName, Validator&gt;();
+    validatorMap.put(WSSecurityEngine.USERNAME_TOKEN, new UsernameTokenValidator() {
+
+        @Override
+        protected void verifyPlaintextPassword(org.apache.ws.security.message.token.UsernameToken usernameToken, org.apache.ws.security.handler.RequestData data)
+            throws org.apache.ws.security.WSSecurityException {
+            if(data.username == "wsuser" &amp;&amp; usernameToken.password == "secret") {
+        println "username and password are correct!"
+    } else {
+        println "username and password are NOT correct..."
+                throw new WSSecurityException("user and/or password mismatch")
+            }
+        }
+    });
+    inProps.put(WSS4JInInterceptor.VALIDATOR_MAP, validatorMap);
+    secureServiceFactory.getInInterceptors().add(new WSS4JInInterceptor(inProps))
+}
+
+def destroy = {
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h4>Conclusion</h4>
+
+<p>My frustrations really only apply to the username token authentication issue, but I haven&rsquo;t tried getting the certificate or ldap authentication working on the server side in 2.5.2 yet.  In general if you need in or out logging or security interceptors on your <a href="http://www.grails.org/plugin/cxf" title="Grails Cxf Plugin">cxf plugin</a> exposed services, the above mentioned is a pretty good way to get them on there.  What you put into the properties of those interceptors to make them work is on you.  Good Luck!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Grails Cxf Interceptor Injection]]></title>
+    <link href="http://www.christianoestreich.com/2012/04/grails-cxf-interceptor-injection/"/>
+    <updated>2012-04-06T12:00:00+00:00</updated>
+    <id>http://www.christianoestreich.com/2012/04/grails-cxf-interceptor-injection</id>
+    <content type="html"><![CDATA[<p>In my <a href="https://www.github.com/Grails-Plugin-Consortium/grails-cxf-client-demo" title="Grails Cxf Client Demo">grails cxf-client-demo project</a> I needed a way to test if the simple username token authentication wss4j interceptors were working.  I looked around the web for help on how to inject an inbound security interceptor into the <a href="http://www.grails.org/plugin/cxf" title="Grails Cxf Plugin">grails cxf plugin</a>.  I found some example on how to do this with cxf 2.3.x versions, but when I was recently helping update the <a href="http://www.grails.org/plugin/cxf" title="Grails Cxf Plugin">grails cxf plugin</a> to use cxf 2.5.2, I found out they changed the way that username token was done.</p>
+
+<!-- more -->
+
+
+<h4>Apache Cxf Security</h4>
+
+<p>All I have to say is good luck with using the sample code from the <a href="http://cxf.apache.org/docs/ws-security.html" title="Apache Cxf Security Docs">apache cxf security docs</a>.  Their code for 2.5.x is lacking and the code provided didn&rsquo;t work and caused me a lot of ???? moments.</p>
+
+<p>The <a href="http://www.grails.org/plugin/cxf" title="Grails Cxf Plugin">cxf plugin</a> wires up service factories that will match the name of your exposed service such as <code>secureService</code> with bean named <code>secureServiceFactory</code>.  You will want to inject any interceptors onto that factory during application boot.  For the following examples I use the BootStrap.groovy to inject these.</p>
+
+<h4>Grails Cxf Interceptor Injection 2.3.x</h4>
+
+<p>This is the &ldquo;old&rdquo; way of adding simple token authentication with 2.3.x.</p>
+
+<p>``` groovy
+import org.apache.cxf.ws.security.wss4j.WSS4JInInterceptor
+import org.apache.ws.security.WSConstants
+import org.apache.ws.security.WSPasswordCallback
+import org.apache.ws.security.handler.WSHandlerConstants</p>
+
+<p>import javax.security.auth.callback.Callback
+import javax.security.auth.callback.CallbackHandler
+import javax.security.auth.callback.UnsupportedCallbackException</p>
+
+<p>class BootStrap {</p>
+
+<pre><code>def secureServiceFactory
+
+def init = { servletContext -&gt;
+
+    Map&lt;String, Object&gt; inProps = [:]
+    inProps.put(WSHandlerConstants.ACTION, WSHandlerConstants.USERNAME_TOKEN);
+    inProps.put(WSHandlerConstants.PASSWORD_TYPE, WSConstants.PW_TEXT);
+    inProps.put(WSHandlerConstants.PW_CALLBACK_REF, new CallbackHandler() {
+
+        void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+            WSPasswordCallback pc = (WSPasswordCallback) callbacks[0]
+            println pc.identifier
+            println pc.password
+            if(pc.identifier == "wsuser" &amp;&amp; pc.password != "secret") {
+                println "error :: wrong password"
+                throw new IOException("wrong password")
+            }
+        }
+    })
+    secureServiceFactory.getInInterceptors().add(new WSS4JInInterceptor(inProps))
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h4>Grails Cxf Interceptor Injection 2.4.x-2.5.x</h4>
+
+<p>Since the new apache cxf 2.4.x and 2.5.x use a Validator instead of the callback, here is how you would now inject that same check into the same service factory.  I am using an anonymous UsernameTokenValidator class just like the anonymous callback in the previous example.</p>
+
+<p>``` groovy
+import org.apache.cxf.ws.security.wss4j.WSS4JInInterceptor
+import org.apache.ws.security.WSConstants
+import org.apache.ws.security.WSSecurityEngine
+import org.apache.ws.security.WSSecurityException
+import org.apache.ws.security.handler.WSHandlerConstants
+import org.apache.ws.security.validate.UsernameTokenValidator
+import org.apache.ws.security.validate.Validator</p>
+
+<p>import javax.xml.namespace.QName</p>
+
+<p>class BootStrap {</p>
+
+<pre><code>def secureServiceFactory
+
+def init = { servletContext -&gt;
+
+    Map&lt;String, Object&gt; inProps = [:]
+    inProps.put(WSHandlerConstants.ACTION, WSHandlerConstants.USERNAME_TOKEN);
+    inProps.put(WSHandlerConstants.PASSWORD_TYPE, WSConstants.PW_TEXT);
+    Map&lt;QName, Validator&gt; validatorMap = new HashMap&lt;QName, Validator&gt;();
+    validatorMap.put(WSSecurityEngine.USERNAME_TOKEN, new UsernameTokenValidator() {
+
+        @Override
+        protected void verifyPlaintextPassword(org.apache.ws.security.message.token.UsernameToken usernameToken, org.apache.ws.security.handler.RequestData data)
+            throws org.apache.ws.security.WSSecurityException {
+            if(data.username == "wsuser" &amp;&amp; usernameToken.password == "secret") {
+        println "username and password are correct!"
+    } else {
+        println "username and password are NOT correct..."
+                throw new WSSecurityException("user and/or password mismatch")
+            }
+        }
+    });
+    inProps.put(WSS4JInInterceptor.VALIDATOR_MAP, validatorMap);
+    secureServiceFactory.getInInterceptors().add(new WSS4JInInterceptor(inProps))
+}
+
+def destroy = {
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h4>Conclusion</h4>
+
+<p>My frustrations really only apply to the username token authentication issue, but I haven&rsquo;t tried getting the certificate or ldap authentication working on the server side in 2.5.2 yet.  In general if you need in or out logging or security interceptors on your <a href="http://www.grails.org/plugin/cxf" title="Grails Cxf Plugin">cxf plugin</a> exposed services, the above mentioned is a pretty good way to get them on there.  What you put into the properties of those interceptors to make them work is on you.  Good Luck!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Grails Cxf Client 1.2.9 Released]]></title>
+    <link href="http://www.christianoestreich.com/2012/03/grails-cxf-client-soap-exceptions.markdown/"/>
+    <updated>2012-03-01T12:00:00+00:00</updated>
+    <id>http://www.christianoestreich.com/2012/03/grails-cxf-client-soap-exceptions.markdown</id>
+    <content type="html"><![CDATA[<p>The <a href="http://www.grails.org/plugin/cxf-client" title="Grails Cxf Client Plugin">Grails cxf-client plugin</a> has been updated to version 1.2.9.  When I first deployed the plugin I overlooked allowing checked exceptions and soap faults to bubble out of the client proxy appropriately.  I modified the plugin to allow this now.  In addition I added a configuration parameter for proxyFactoryBindingId to allow soap 1.2 (set to &ldquo;<a href="http://schemas.xmlsoap.org/wsdl/soap12/">http://schemas.xmlsoap.org/wsdl/soap12/</a>&rdquo;).</p>
+
+<h4>Updated Parameter Documentation</h4>
+
+<p>The following partial documentation is available in full at <a href="https://github.com/Grails-Plugin-Consortium/cxf-client">https://github.com/Grails-Plugin-Consortium/cxf-client</a></p>
+
+<table>
+<thead>
+<tr>
+<th align="left">Property</th>
+<th align="left">Description</th>
+<th align="left">Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">proxyFactoryBindingId</td>
+<td align="left">The URI, or ID, of the message binding for the endpoint to use. For SOAP the binding URI(ID) is specified by the JAX-WS specification. For other message bindings the URI is the namespace of the WSDL extensions used to specify the binding. If you would like to change the binding (to use soap12 for example) set this value to &ldquo;<a href="http://schemas.xmlsoap.org/wsdl/soap12/">http://schemas.xmlsoap.org/wsdl/soap12/</a>&rdquo;. (default: &ldquo;&rdquo;)</td>
+<td align="left">No</td>
+</tr>
+</tbody>
+</table>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Grails Cxf Client 1.2.9 Released]]></title>
+    <link href="http://www.christianoestreich.com/2012/03/grails-cxf-client-soap-exceptions/"/>
+    <updated>2012-03-01T12:00:00+00:00</updated>
+    <id>http://www.christianoestreich.com/2012/03/grails-cxf-client-soap-exceptions</id>
+    <content type="html"><![CDATA[<p>The <a href="http://www.grails.org/plugin/cxf-client" title="Grails Cxf Client Plugin">Grails cxf-client plugin</a> has been updated to version 1.2.9.  When I first deployed the plugin I overlooked allowing checked exceptions and soap faults to bubble out of the client proxy appropriately.  I modified the plugin to allow this now.  In addition I added a configuration parameter for proxyFactoryBindingId to allow soap 1.2 (set to &ldquo;<a href="http://schemas.xmlsoap.org/wsdl/soap12/">http://schemas.xmlsoap.org/wsdl/soap12/</a>&rdquo;).</p>
+
+<h4>Updated Parameter Documentation</h4>
+
+<p>The following partial documentation is available in full at <a href="https://github.com/Grails-Plugin-Consortium/grails-cxf-client">https://github.com/Grails-Plugin-Consortium/grails-cxf-client</a></p>
+
+<table>
+<thead>
+<tr>
+<th align="left">Property</th>
+<th align="left">Description</th>
+<th align="left">Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">proxyFactoryBindingId</td>
+<td align="left">The URI, or ID, of the message binding for the endpoint to use. For SOAP the binding URI(ID) is specified by the JAX-WS specification. For other message bindings the URI is the namespace of the WSDL extensions used to specify the binding. If you would like to change the binding (to use soap12 for example) set this value to &ldquo;<a href="http://schemas.xmlsoap.org/wsdl/soap12/">http://schemas.xmlsoap.org/wsdl/soap12/</a>&rdquo;. (default: &ldquo;&rdquo;)</td>
+<td align="left">No</td>
+</tr>
+</tbody>
+</table>
+
+]]></content>
+  </entry>
+  
+</feed>
